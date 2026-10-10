@@ -1,0 +1,71 @@
+@page "/Account/Orders"
+@model OrdersModel
+@{
+    ViewData["Title"] = "My orders";
+}
+<div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div class="mb-8">
+        <h1 class="text-2xl font-bold tracking-tight sm:text-3xl">My orders</h1>
+        <p class="mt-1 text-sm text-muted-foreground">Everything you've ordered, newest first.</p>
+    </div>
+
+    @if (Model.Orders.Count == 0)
+    {
+        <div class="card mx-auto max-w-lg items-center py-16 text-center">
+            <div class="flex size-16 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                <icon name="package" class="size-8" />
+            </div>
+            <div class="space-y-1">
+                <h2 class="text-lg font-semibold">No orders yet</h2>
+                <p class="text-sm text-muted-foreground">When you place an order it will show up right here.</p>
+            </div>
+            <a asp-page="/Catalog/Index" class="btn btn-primary btn-lg">
+                <icon name="shopping-bag" class="size-4" /> Start shopping
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="space-y-4">
+            @foreach (var order in Model.Orders)
+            {
+                <div class="card gap-4 py-5 transition-shadow hover:shadow-md">
+                    <div class="flex flex-wrap items-center justify-between gap-3 px-6">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <span class="font-mono text-sm font-semibold">@order.OrderNumber</span>
+                            <partial name="_StatusBadge" model="order.Status" />
+                            <span class="text-xs text-muted-foreground">@order.PlacedAt.Friendly()</span>
+                        </div>
+                        <div class="flex -space-x-2">
+                            @foreach (var line in order.Lines.Take(3))
+                            {
+                                <img src="@line.ImageUrl" alt="@line.ProductName" class="size-8 rounded-full border-2 border-background object-cover" loading="lazy" />
+                            }
+                            @if (order.Lines.Count > 3)
+                            {
+                                <span class="flex size-8 items-center justify-center rounded-full border-2 border-background bg-muted text-[10px] font-semibold">
+                                    +@(order.Lines.Count - 3)
+                                </span>
+                            }
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap items-center justify-between gap-3 px-6">
+                        <p class="text-sm text-muted-foreground">
+                            @(order.Lines.Sum(l => l.Quantity)) item@(order.Lines.Sum(l => l.Quantity) == 1 ? "" : "s")
+                            @if (!string.IsNullOrEmpty(order.ShippingMethodName))
+                            {
+                                <span> · @order.ShippingMethodName</span>
+                            }
+                        </p>
+                        <p class="text-lg font-bold tabular-nums">@order.Total.Money()</p>
+                    </div>
+                    <div class="px-6">
+                        <a asp-page="/Account/Orders/Details" asp-route-id="@order.Id" class="btn btn-outline btn-sm">
+                            View details <icon name="chevron-right" class="size-3.5" />
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

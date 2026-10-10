@@ -1,0 +1,40 @@
+@model ECommerce.Core.Models.PagedResult<ECommerce.Core.Models.ProductCardView>
+@{
+    var query = Context.Request.Query.Where(kvp => kvp.Key != "page").ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToString());
+    string PageUrl(int page)
+    {
+        query["page"] = page.ToString();
+        var qs = string.Join("&", query.Select(kvp => $"{Uri.EscapeDataString(kvp.Key)}={Uri.EscapeDataString(kvp.Value)}"));
+        return "?" + qs;
+    }
+
+    var window = new List<int>();
+    for (var p = Math.Max(1, Model.Page - 2); p <= Math.Min(Model.TotalPages, Model.Page + 2); p++) window.Add(p);
+}
+@if (Model.TotalPages > 1)
+{
+    <nav class="flex items-center justify-center gap-1" aria-label="Pagination">
+        @if (Model.HasPrevious)
+        {
+            <a href="@PageUrl(Model.Page - 1)" class="btn btn-outline btn-icon" aria-label="Previous page"><icon name="chevron-left" class="size-4" /></a>
+        }
+        @if (!window.Contains(1))
+        {
+            <a href="@PageUrl(1)" class="btn btn-ghost btn-icon">1</a>
+            @if (window.First() > 2) { <span class="px-1 text-muted-foreground">…</span> }
+        }
+        @foreach (var p in window)
+        {
+            <a href="@PageUrl(p)" class="btn btn-icon @(p == Model.Page ? "btn-primary" : "btn-ghost")" aria-current="@(p == Model.Page ? "page" : null)">@p</a>
+        }
+        @if (!window.Contains(Model.TotalPages))
+        {
+            @if (window.Last() < Model.TotalPages - 1) { <span class="px-1 text-muted-foreground">…</span> }
+            <a href="@PageUrl(Model.TotalPages)" class="btn btn-ghost btn-icon">@Model.TotalPages</a>
+        }
+        @if (Model.HasNext)
+        {
+            <a href="@PageUrl(Model.Page + 1)" class="btn btn-outline btn-icon" aria-label="Next page"><icon name="chevron-right" class="size-4" /></a>
+        }
+    </nav>
+}

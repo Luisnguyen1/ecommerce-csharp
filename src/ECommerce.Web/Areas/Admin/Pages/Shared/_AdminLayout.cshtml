@@ -1,0 +1,153 @@
+@{
+    var path = ViewContext.HttpContext.Request.Path;
+
+    string NavClass(bool active) =>
+        "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors " +
+        (active
+            ? "bg-accent text-accent-foreground font-medium"
+            : "text-muted-foreground hover:bg-accent/60 hover:text-foreground");
+
+    string ChipClass(bool active) =>
+        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm transition-colors " +
+        (active
+            ? "bg-primary text-primary-foreground font-medium"
+            : "text-muted-foreground hover:bg-accent hover:text-foreground");
+
+    bool Is(string segment) =>
+        segment == "/Admin"
+            ? path == "/Admin" || path == "/Admin/"
+            : path.StartsWithSegments(segment, StringComparison.OrdinalIgnoreCase);
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@(ViewData["Title"] != null ? ViewData["Title"] + " · " : "")Admin · Nimbus</title>
+    <meta name="description" content="Nimbus admin area — manage products, orders, coupons, users and more." />
+    <meta name="robots" content="noindex" />
+    <link rel="icon" type="image/svg+xml" href="~/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/app.css" asp-append-version="true" />
+    <script>
+        // Apply theme before first paint to avoid a flash.
+        (function () {
+            var t = localStorage.getItem('theme');
+            if (t === 'dark' || (!t && matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
+</head>
+<body class="min-h-screen flex bg-background text-foreground">
+
+    <!-- Sidebar (desktop) -->
+    <aside class="hidden lg:flex w-60 shrink-0 flex-col border-r bg-muted/30 sticky top-0 h-screen">
+        <div class="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+            <a asp-page="/Index" class="flex items-center gap-2 font-extrabold tracking-tight" title="Back to store">
+                <span class="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                    <icon name="shopping-bag" class="size-4" />
+                </span>
+                <span>Nimbus</span>
+            </a>
+            <span class="badge badge-secondary ml-auto">Admin</span>
+        </div>
+
+        <nav class="flex-1 space-y-1 overflow-y-auto p-3">
+            <a asp-area="Admin" asp-page="/Index" class="@NavClass(Is("/Admin"))">
+                <icon name="layout-dashboard" class="size-4" /> Dashboard
+            </a>
+            <a asp-area="Admin" asp-page="/Products/Index" class="@NavClass(Is("/Admin/Products"))">
+                <icon name="package" class="size-4" /> Products
+            </a>
+            <a asp-area="Admin" asp-page="/Categories/Index" class="@NavClass(Is("/Admin/Categories"))">
+                <icon name="tag" class="size-4" /> Categories
+            </a>
+            <a asp-area="Admin" asp-page="/Orders/Index" class="@NavClass(Is("/Admin/Orders"))">
+                <icon name="truck" class="size-4" /> Orders
+            </a>
+            <a asp-area="Admin" asp-page="/Coupons/Index" class="@NavClass(Is("/Admin/Coupons"))">
+                <icon name="tag" class="size-4" /> Coupons
+            </a>
+            <a asp-area="Admin" asp-page="/Users/Index" class="@NavClass(Is("/Admin/Users"))">
+                <icon name="users" class="size-4" /> Users
+            </a>
+            <a asp-area="Admin" asp-page="/Inbox/Index" class="@NavClass(Is("/Admin/Inbox"))">
+                <icon name="inbox" class="size-4" /> Inbox
+            </a>
+        </nav>
+
+        <div class="space-y-1 border-t p-3">
+            <a asp-page="/Index" class="menu-item text-muted-foreground">
+                <icon name="chevron-left" class="size-4" /> Back to store
+            </a>
+            <div class="mt-1 flex items-center gap-2 rounded-md px-2 py-1.5">
+                <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <icon name="user" class="size-4" />
+                </span>
+                <div class="min-w-0 flex-1">
+                    <p class="truncate text-sm font-medium" title="@User.Identity?.Name">@User.Identity?.Name</p>
+                    <span class="badge badge-outline mt-0.5">Admin</span>
+                </div>
+                <button type="button" class="btn btn-ghost btn-icon" data-theme-toggle aria-label="Toggle theme" title="Toggle theme">
+                    <icon name="sun" class="size-4 dark:hidden" />
+                    <icon name="moon" class="hidden size-4 dark:block" />
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <div class="flex min-w-0 flex-1 flex-col">
+        <!-- Mobile top bar -->
+        <header class="sticky top-0 z-40 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 lg:hidden">
+            <div class="flex h-14 items-center gap-2 px-4">
+                <a asp-page="/Index" class="flex items-center gap-2 font-extrabold tracking-tight">
+                    <span class="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                        <icon name="shopping-bag" class="size-3.5" />
+                    </span>
+                    <span class="text-sm">Nimbus</span>
+                </a>
+                <span class="badge badge-secondary">Admin</span>
+                <div class="ml-auto flex items-center gap-1">
+                    <p class="mr-1 max-w-32 truncate text-xs text-muted-foreground">@User.Identity?.Name</p>
+                    <button type="button" class="btn btn-ghost btn-icon" data-theme-toggle aria-label="Toggle theme" title="Toggle theme">
+                        <icon name="sun" class="size-4 dark:hidden" />
+                        <icon name="moon" class="hidden size-4 dark:block" />
+                    </button>
+                </div>
+            </div>
+            <nav class="flex gap-1 overflow-x-auto border-t px-4 py-2">
+                <a asp-area="Admin" asp-page="/Index" class="@ChipClass(Is("/Admin"))"><icon name="layout-dashboard" class="size-4" /> Dashboard</a>
+                <a asp-area="Admin" asp-page="/Products/Index" class="@ChipClass(Is("/Admin/Products"))"><icon name="package" class="size-4" /> Products</a>
+                <a asp-area="Admin" asp-page="/Categories/Index" class="@ChipClass(Is("/Admin/Categories"))"><icon name="tag" class="size-4" /> Categories</a>
+                <a asp-area="Admin" asp-page="/Orders/Index" class="@ChipClass(Is("/Admin/Orders"))"><icon name="truck" class="size-4" /> Orders</a>
+                <a asp-area="Admin" asp-page="/Coupons/Index" class="@ChipClass(Is("/Admin/Coupons"))"><icon name="tag" class="size-4" /> Coupons</a>
+                <a asp-area="Admin" asp-page="/Users/Index" class="@ChipClass(Is("/Admin/Users"))"><icon name="users" class="size-4" /> Users</a>
+                <a asp-area="Admin" asp-page="/Inbox/Index" class="@ChipClass(Is("/Admin/Inbox"))"><icon name="inbox" class="size-4" /> Inbox</a>
+            </nav>
+        </header>
+
+        <main class="flex-1">
+            <div class="mx-auto w-full max-w-7xl p-4 sm:p-6 lg:p-8">
+                @RenderBody()
+            </div>
+        </main>
+    </div>
+
+    @if (TempData["Toast.Message"] is string toast)
+    {
+        <div class="toast" data-toast>
+            <icon name="@TempData["Toast.Icon"]" class="size-4 @(TempData["Toast.Type"] is "error" ? "text-destructive" : "text-success")" />
+            <div class="text-sm">@toast</div>
+            <button type="button" class="ml-auto text-muted-foreground hover:text-foreground" data-toast-close aria-label="Dismiss">
+                <icon name="x" class="size-4" />
+            </button>
+        </div>
+    }
+
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

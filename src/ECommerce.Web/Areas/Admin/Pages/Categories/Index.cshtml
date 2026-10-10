@@ -1,0 +1,213 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Categories";
+}
+<div class="mb-6">
+    <h1 class="flex items-center gap-2 text-2xl font-bold tracking-tight">
+        Categories
+        <span class="badge badge-secondary">@Model.Categories.Count</span>
+    </h1>
+    <p class="text-sm text-muted-foreground">Group products for navigation and browsing.</p>
+</div>
+
+<!-- Create -->
+<section class="card">
+    <div class="card-header">
+        <h2 class="card-title">New category</h2>
+        <p class="card-description">The slug auto-fills from the name — edit it if you want something different.</p>
+    </div>
+    <form method="post" asp-page-handler="Create">
+        <div class="card-content grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="form-field">
+                <label class="label" for="cat-name">Name</label>
+                <input id="cat-name" name="name" class="input" placeholder="Audio" autocomplete="off" required />
+            </div>
+            <div class="form-field">
+                <label class="label" for="cat-slug">Slug</label>
+                <input id="cat-slug" name="slug" class="input font-mono" placeholder="audio" autocomplete="off" required />
+            </div>
+            <div class="form-field">
+                <label class="label" for="cat-icon">Icon</label>
+                <input id="cat-icon" name="icon" class="input" placeholder="🎧" autocomplete="off" maxlength="8" />
+                <p class="text-xs text-muted-foreground">An emoji shown in the nav.</p>
+            </div>
+            <div class="form-field">
+                <label class="label" for="cat-order">Display order</label>
+                <input id="cat-order" name="displayOrder" type="number" class="input" value="0" />
+                <p class="text-xs text-muted-foreground">Lower numbers come first.</p>
+            </div>
+            <div class="form-field">
+                <label class="label">Visibility</label>
+                <label class="flex h-9 items-center gap-2 text-sm">
+                    <input type="checkbox" name="isActive" value="true" checked class="size-4 accent-primary" />
+                    Show in navigation
+                </label>
+            </div>
+            <div class="form-field sm:col-span-2 lg:col-span-3">
+                <label class="label" for="cat-description">Description</label>
+                <textarea id="cat-description" name="description" class="textarea" rows="2" placeholder="Optional short blurb…"></textarea>
+            </div>
+        </div>
+        <div class="card-footer justify-end">
+            <button type="submit" class="btn btn-primary">
+                <icon name="plus" class="size-4" /> Create category
+            </button>
+        </div>
+    </form>
+</section>
+
+<!-- List -->
+<section class="card mt-6">
+    <div class="card-header">
+        <h2 class="card-title">All categories</h2>
+        <p class="card-description">Expand a row to edit it inline.</p>
+    </div>
+    <div class="card-content overflow-x-auto">
+        @if (Model.Categories.Count == 0)
+        {
+            <div class="flex flex-col items-center gap-2 py-16 text-center text-muted-foreground">
+                <icon name="tag" class="size-8" />
+                <p class="text-sm">No categories yet — create the first one above.</p>
+            </div>
+        }
+        else
+        {
+            <table class="table-shad">
+                <thead>
+                    <tr>
+                        <th class="w-12"></th>
+                        <th>Category</th>
+                        <th class="text-right">Order</th>
+                        <th class="text-right">Products</th>
+                        <th>Status</th>
+                        <th class="text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var category in Model.Categories)
+                    {
+                        var count = Model.CountFor(category);
+                        <tr>
+                            <td>
+                                @if (string.IsNullOrWhiteSpace(category.Icon))
+                                {
+                                    <span class="flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                                        <icon name="tag" class="size-4" />
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="flex size-9 items-center justify-center rounded-lg bg-muted text-lg" title="@category.Icon">@category.Icon</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="flex flex-col">
+                                    <span class="font-medium">@category.Name</span>
+                                    <span class="font-mono text-xs text-muted-foreground">@category.Slug</span>
+                                    @if (!string.IsNullOrWhiteSpace(category.Description))
+                                    {
+                                        <span class="max-w-md truncate text-xs text-muted-foreground" title="@category.Description">@category.Description</span>
+                                    }
+                                </div>
+                            </td>
+                            <td class="text-right text-muted-foreground">@category.DisplayOrder</td>
+                            <td class="text-right">
+                                <span class="font-medium">@count</span>
+                            </td>
+                            <td>
+                                @if (category.IsActive)
+                                {
+                                    <span class="badge badge-success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-secondary">Hidden</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="flex items-center justify-end">
+                                    @if (count > 0)
+                                    {
+                                        <button type="button" class="btn btn-ghost btn-sm text-destructive opacity-50" disabled
+                                                title="Products keep their category id — reassign them first">
+                                            <icon name="trash-2" class="size-4" /> Delete
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <form method="post" asp-page-handler="Delete" asp-route-id="@category.Id" data-confirm="Delete this category?">
+                                            <button type="submit" class="btn btn-ghost btn-sm text-destructive" title="Delete">
+                                                <icon name="trash-2" class="size-4" /> Delete
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="border-0! hover:bg-transparent!">
+                            <td colspan="6" class="p-0!">
+                                <details>
+                                    <summary class="flex w-fit cursor-pointer select-none list-none items-center gap-1.5 px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
+                                        <icon name="pencil" class="size-3.5" /> Edit category
+                                    </summary>
+                                    <form method="post" asp-page-handler="Update" asp-route-id="@category.Id"
+                                          class="mx-3 mb-4 grid gap-3 rounded-lg border bg-muted/40 p-4 sm:grid-cols-2 lg:grid-cols-4">
+                                        <div class="form-field">
+                                            <label class="label">Name</label>
+                                            <input name="name" class="input" value="@category.Name" autocomplete="off" required />
+                                        </div>
+                                        <div class="form-field">
+                                            <label class="label">Slug</label>
+                                            <input name="slug" class="input font-mono" value="@category.Slug" autocomplete="off" required />
+                                        </div>
+                                        <div class="form-field">
+                                            <label class="label">Icon</label>
+                                            <input name="icon" class="input" value="@category.Icon" placeholder="🎧" maxlength="8" autocomplete="off" />
+                                        </div>
+                                        <div class="form-field">
+                                            <label class="label">Display order</label>
+                                            <input name="displayOrder" type="number" class="input" value="@category.DisplayOrder" />
+                                        </div>
+                                        <div class="form-field">
+                                            <label class="label">Visibility</label>
+                                            <label class="flex h-9 items-center gap-2 text-sm">
+                                                <input type="checkbox" name="isActive" value="true" @(category.IsActive ? "checked" : null) class="size-4 accent-primary" />
+                                                Show in navigation
+                                            </label>
+                                        </div>
+                                        <div class="form-field sm:col-span-2 lg:col-span-3">
+                                            <label class="label">Description</label>
+                                            <textarea name="description" class="textarea" rows="2">@category.Description</textarea>
+                                        </div>
+                                        <div class="flex items-center justify-end sm:col-span-2 lg:col-span-4">
+                                            <button type="submit" class="btn btn-primary btn-sm">
+                                                <icon name="check" class="size-4" /> Save changes
+                                            </button>
+                                        </div>
+                                    </form>
+                                </details>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        (function () {
+            var name = document.getElementById('cat-name');
+            var slug = document.getElementById('cat-slug');
+            if (!name || !slug) return;
+            var touched = slug.value.length > 0;
+            slug.addEventListener('input', function () { touched = true; });
+            name.addEventListener('input', function () {
+                if (touched) return;
+                slug.value = name.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+            });
+        })();
+    </script>
+}

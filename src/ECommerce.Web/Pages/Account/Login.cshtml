@@ -1,0 +1,70 @@
+@page "/Account/Login"
+@model LoginModel
+@{
+    ViewData["Title"] = "Sign in";
+}
+<div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+    <div class="mx-auto w-full max-w-md">
+        <div class="card animate-slide-up">
+            <div class="card-header items-center text-center">
+                <div class="mx-auto flex size-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                    <icon name="shopping-bag" class="size-6" />
+                </div>
+                <h1 class="text-2xl font-bold tracking-tight">Welcome back</h1>
+                <p class="card-description">Sign in to track orders, sync your wishlist and check out faster.</p>
+            </div>
+
+            <form method="post" novalidate class="card-content space-y-4">
+                <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+
+                @if (!ViewData.ModelState.IsValid && ViewData.ModelState.TryGetValue(string.Empty, out var modelEntry) && modelEntry.Errors.Count > 0)
+                {
+                    <div class="alert alert-destructive" role="alert">
+                        <icon name="alert-circle" />
+                        <div>
+                            <p class="alert-title">@modelEntry.Errors[0].ErrorMessage</p>
+                        </div>
+                    </div>
+                }
+
+                <div class="form-field">
+                    <label class="label" for="Email">Email</label>
+                    <input asp-for="Email" type="email" class="input" autocomplete="username email"
+                           placeholder="you@example.com" required autofocus />
+                </div>
+                <div class="form-field">
+                    <label class="label" for="Password">Password</label>
+                    <input asp-for="Password" type="password" class="input" autocomplete="current-password"
+                           placeholder="••••••••" required />
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg w-full">
+                    <icon name="log-in" class="size-4" /> Sign in
+                </button>
+            </form>
+
+            <div class="card-footer flex-col gap-4">
+                <p class="text-center text-sm text-muted-foreground">
+                    New here?
+                    <a asp-page="/Account/Register" asp-route-returnUrl="@Model.ReturnUrl" class="font-medium text-foreground underline-offset-4 hover:underline">Create an account</a>
+                </p>
+
+                <div class="rounded-xl border border-dashed bg-muted/30 p-4 text-sm">
+                    <p class="mb-2 flex items-center gap-1.5 font-medium">
+                        <icon name="sparkles" class="size-3.5 text-primary" /> Demo accounts
+                    </p>
+                    <div class="space-y-1.5 text-xs">
+                        <p class="flex items-center justify-between gap-2">
+                            <span class="font-mono">admin@nimbus.dev · Admin123!</span>
+                            <span class="badge badge-default">Admin</span>
+                        </p>
+                        <p class="font-mono">demo@nimbus.dev · Demo1234!</p>
+                    </div>
+                    <p class="mt-2 text-xs text-muted-foreground">
+                        Mock demo accounts — data resets only if you delete database.json.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

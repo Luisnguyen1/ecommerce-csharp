@@ -1,0 +1,14 @@
+{
+  "name": "ecommerce-csharp",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Full-featured e-commerce demo built with ASP.NET Core Razor Pages, Tailwind CSS v4 and the shadcn/ui design language",
+  "scripts": {
+    "css:build": "tailwindcss -i ./src/ECommerce.Web/wwwroot/css/app.src.css -o ./src/ECommerce.Web/wwwroot/css/app.css --minify",
+    "css:watch": "tailwindcss -i ./src/ECommerce.Web/wwwroot/css/app.src.css -o ./src/ECommerce.Web/wwwroot/css/app.css --watch"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.0",
+    "tailwindcss": "^4.1.0"
+  }
+}

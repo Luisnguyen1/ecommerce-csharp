@@ -1,0 +1,33 @@
+@page
+@model ErrorModel
+
+<div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div class="mx-auto flex max-w-lg flex-col items-center gap-6 py-16 text-center sm:py-24">
+        <span class="flex size-16 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+            <icon name="@(Model.IsNotFound ? "search" : "alert-circle")" class="size-8" />
+        </span>
+        <div class="space-y-2">
+            <p class="text-sm font-medium text-muted-foreground">Error @Model.Code</p>
+            <h1 class="text-3xl font-bold tracking-tight">@(Model.IsNotFound ? "Page not found" : "Something went wrong")</h1>
+            <p class="text-muted-foreground">
+                @(Model.IsNotFound
+                    ? "The page you are looking for does not exist, was moved, or the product is no longer available."
+                    : "An unexpected error occurred while processing your request. Please try again in a moment.")
+            </p>
+        </div>
+        <div class="flex flex-wrap justify-center gap-3">
+            <a asp-page="/Index" class="btn btn-primary btn-lg">
+                <icon name="chevron-left" class="size-4" /> Back home
+            </a>
+            <a asp-page="/Catalog/Index" class="btn btn-outline btn-lg">
+                Browse the shop <icon name="arrow-right" class="size-4" />
+            </a>
+        </div>
+        @if (Model.ShowRequestId)
+        {
+            <p class="text-xs text-muted-foreground">
+                Request ID: <code class="font-mono">@Model.RequestId</code>
+            </p>
+        }
+    </div>
+</div>

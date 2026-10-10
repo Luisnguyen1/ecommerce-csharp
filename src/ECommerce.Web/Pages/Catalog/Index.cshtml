@@ -1,0 +1,173 @@
+@page "/Catalog"
+@model ECommerce.Web.Pages.Catalog.IndexModel
+@{
+    var hasSearch = !string.IsNullOrWhiteSpace(Model.Q);
+    var hasCategory = Model.CurrentCategory is not null;
+    var hasPrice = Model.Min.HasValue || Model.Max.HasValue;
+    var hasFilters = hasSearch || hasCategory || hasPrice || Model.Featured;
+    var sortValue = Model.Sort ?? "newest";
+
+    var priceLabel = Model.Min.HasValue && Model.Max.HasValue
+        ? $"{Model.Min.Value.Money()} \u2013 {Model.Max.Value.Money()}"
+        : Model.Min.HasValue ? $"From {Model.Min.Value.Money()}"
+        : Model.Max.HasValue ? $"Up to {Model.Max!.Value.Money()}"
+        : "";
+
+    // Rebuilds the current query string without the given keys (and always resets paging).
+    string Without(params string[] remove)
+    {
+        var parts = HttpContext.Request.Query
+            .Where(kvp => kvp.Key != "page" && !remove.Contains(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+            .Select(kvp => $"{Uri.EscapeDataString(kvp.Key)}={Uri.EscapeDataString(kvp.Value.ToString())}");
+        var qs = string.Join("&", parts);
+        return string.IsNullOrEmpty(qs) ? "/Catalog" : "/Catalog?" + qs;
+    }
+}
+
+<div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div class="grid gap-8 lg:grid-cols-[240px_1fr]">
+
+        <!-- Sidebar filters -->
+        <aside>
+            <form method="get" class="space-y-6 rounded-xl border bg-card p-6 shadow-sm lg:sticky lg:top-20">
+                <input type="hidden" name="sort" value="@sortValue" />
+                @if (Model.Featured)
+                {
+                    <input type="hidden" name="featured" value="true" />
+                }
+
+                <div class="form-field">
+                    <label class="label" for="filter-q">Search</label>
+                    <div class="relative">
+                        <icon name="search" class="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                        <input id="filter-q" type="search" name="q" value="@Model.Q" placeholder="Search products…" class="input pl-8" />
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <span class="label">Category</span>
+                    <div class="space-y-0.5">
+                        <label class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-accent">
+                            <input type="radio" name="category" value="" checked="@(Model.CurrentCategory is null)" class="accent-primary" />
+                            All categories
+                        </label>
+                        @foreach (var category in Model.Categories)
+                        {
+                            <label class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-accent">
+                                <input type="radio" name="category" value="@category.Slug" checked="@(Model.CurrentCategory?.Slug == category.Slug)" class="accent-primary" />
+                                <span aria-hidden="true">@category.Icon</span> @category.Name
+                            </label>
+                        }
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label class="label" for="filter-min">Price</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input id="filter-min" type="number" name="min" value="@Model.Min" min="0" step="1" inputmode="decimal" placeholder="Min" class="input" />
+                        <input type="number" name="max" value="@Model.Max" min="0" step="1" inputmode="decimal" placeholder="Max" class="input" aria-label="Maximum price" />
+                    </div>
+                </div>
+
+                <div class="space-y-2 pt-1">
+                    <button type="submit" class="btn btn-primary w-full">
+                        <icon name="filter" class="size-4" /> Apply filters
+                    </button>
+                    @if (hasFilters)
+                    {
+                        <a href="/Catalog" class="btn btn-ghost w-full text-muted-foreground">Clear all</a>
+                    }
+                </div>
+            </form>
+        </aside>
+
+        <!-- Results -->
+        <div class="space-y-6">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div class="space-y-1">
+                    <h1 class="text-2xl font-bold tracking-tight">
+                        @(hasSearch ? $"Search \u201c{Model.Q!.Trim()}\u201d"
+                          : hasCategory ? Model.CurrentCategory!.Name
+                          : Model.Featured ? "Featured products"
+                          : "All products")
+                    </h1>
+                    <p class="text-sm text-muted-foreground">
+                        @Model.Result.TotalCount product@(Model.Result.TotalCount == 1 ? "" : "s")
+                        @(Model.Result.TotalPages > 1 ? $" \u00b7 page {Model.Result.Page} of {Model.Result.TotalPages}" : "")
+                    </p>
+                </div>
+                <form method="get" class="flex items-center gap-2">
+                    <input type="hidden" name="q" value="@Model.Q" />
+                    <input type="hidden" name="category" value="@Model.Category" />
+                    <input type="hidden" name="min" value="@Model.Min" />
+                    <input type="hidden" name="max" value="@Model.Max" />
+                    @if (Model.Featured)
+                    {
+                        <input type="hidden" name="featured" value="true" />
+                    }
+                    <label for="sort" class="hidden text-sm text-muted-foreground sm:inline">Sort by</label>
+                    <select id="sort" name="sort" data-autosubmit class="select w-48">
+                        <option value="newest" selected="@(sortValue == "newest")">Newest</option>
+                        <option value="price-asc" selected="@(sortValue == "price-asc")">Price: low to high</option>
+                        <option value="price-desc" selected="@(sortValue == "price-desc")">Price: high to low</option>
+                        <option value="name" selected="@(sortValue == "name")">Name</option>
+                        <option value="rating" selected="@(sortValue == "rating")">Top rated</option>
+                    </select>
+                </form>
+            </div>
+
+            @if (hasFilters)
+            {
+                <div class="flex flex-wrap items-center gap-2">
+                    @if (hasSearch)
+                    {
+                        <a href="@Without("q")" class="badge badge-outline gap-1.5 py-1 pl-2.5 pr-1.5 transition-colors hover:bg-accent">
+                            <icon name="search" class="size-3" /> @Model.Q!.Trim() <icon name="x" class="size-3" />
+                        </a>
+                    }
+                    @if (hasCategory)
+                    {
+                        <a href="@Without("category")" class="badge badge-outline gap-1.5 py-1 pl-2.5 pr-1.5 transition-colors hover:bg-accent">
+                            <span aria-hidden="true">@Model.CurrentCategory!.Icon</span> @Model.CurrentCategory.Name <icon name="x" class="size-3" />
+                        </a>
+                    }
+                    @if (hasPrice)
+                    {
+                        <a href="@Without("min", "max")" class="badge badge-outline gap-1.5 py-1 pl-2.5 pr-1.5 transition-colors hover:bg-accent">
+                            @priceLabel <icon name="x" class="size-3" />
+                        </a>
+                    }
+                    @if (Model.Featured)
+                    {
+                        <a href="@Without("featured")" class="badge badge-outline gap-1.5 py-1 pl-2.5 pr-1.5 transition-colors hover:bg-accent">
+                            Featured <icon name="x" class="size-3" />
+                        </a>
+                    }
+                </div>
+            }
+
+            @if (Model.Result.Items.Count > 0)
+            {
+                <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6 lg:grid-cols-4">
+                    @foreach (var product in Model.Result.Items)
+                    {
+                        <partial name="_ProductCard" model="product" />
+                    }
+                </div>
+                <partial name="_Pagination" model="Model.Result" />
+            }
+            else
+            {
+                <div class="card items-center rounded-xl py-16 text-center">
+                    <icon name="search" class="size-10 text-muted-foreground" />
+                    <div class="space-y-1">
+                        <h2 class="text-lg font-semibold">No products found</h2>
+                        <p class="text-sm text-muted-foreground">Try adjusting your search or filters.</p>
+                    </div>
+                    <a href="/Catalog" class="btn btn-outline">Clear filters</a>
+                </div>
+            }
+        </div>
+
+    </div>
+</div>

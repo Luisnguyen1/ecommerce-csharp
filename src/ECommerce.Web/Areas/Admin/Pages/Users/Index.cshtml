@@ -1,0 +1,112 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Users";
+
+    string Initials(string name)
+    {
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return parts.Length == 0
+            ? "?"
+            : string.Concat(parts.Take(2).Select(p => p[0])).ToUpperInvariant();
+    }
+}
+<div class="mb-6">
+    <h1 class="flex items-center gap-2 text-2xl font-bold tracking-tight">
+        Users
+        <span class="badge badge-secondary">@Model.Users.Count</span>
+    </h1>
+    <p class="text-sm text-muted-foreground">Registered accounts and their roles.</p>
+</div>
+
+<div class="alert alert-default mb-6">
+    <icon name="alert-circle" class="size-4" />
+    <div class="alert-description">
+        <p class="alert-title">Role changes take effect on the next sign-in</p>
+        <p>Role claims are baked into the authentication cookie — ask the user to sign out and back in for a new role to apply.</p>
+    </div>
+</div>
+
+<section class="card">
+    <div class="card-content overflow-x-auto">
+        @if (Model.Users.Count == 0)
+        {
+            <div class="flex flex-col items-center gap-2 py-16 text-center text-muted-foreground">
+                <icon name="users" class="size-8" />
+                <p class="text-sm">No registered users yet.</p>
+            </div>
+        }
+        else
+        {
+            <table class="table-shad">
+                <thead>
+                    <tr>
+                        <th class="w-12"></th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Joined</th>
+                        <th class="text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model.Users)
+                    {
+                        var isSelf = Model.IsSelf(user);
+                        <tr>
+                            <td>
+                                <span class="flex size-9 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary" title="@user.FullName">
+                                    @Initials(user.FullName)
+                                </span>
+                            </td>
+                            <td class="font-medium">
+                                @user.FullName
+                                @if (isSelf)
+                                {
+                                    <span class="badge badge-outline ml-1.5">You</span>
+                                }
+                            </td>
+                            <td><span class="font-mono text-xs text-muted-foreground">@user.Email</span></td>
+                            <td>
+                                @if (user.Role == Roles.Admin)
+                                {
+                                    <span class="badge badge-default"><icon name="shield-check" class="size-3" /> Admin</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-secondary">Customer</span>
+                                }
+                            </td>
+                            <td class="whitespace-nowrap text-muted-foreground">@user.CreatedAt.Friendly()</td>
+                            <td>
+                                <div class="flex items-center justify-end gap-1">
+                                    @if (isSelf)
+                                    {
+                                        <span class="text-xs text-muted-foreground">—</span>
+                                    }
+                                    else if (user.Role == Roles.Admin)
+                                    {
+                                        <form method="post" asp-page-handler="SetRole" asp-route-id="@user.Id" asp-route-role="@Roles.Customer"
+                                              data-confirm="Demote this admin to customer? They will lose admin access on their next sign-in.">
+                                            <button type="submit" class="btn btn-ghost btn-sm">
+                                                Make customer
+                                            </button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <form method="post" asp-page-handler="SetRole" asp-route-id="@user.Id" asp-route-role="@Roles.Admin">
+                                            <button type="submit" class="btn btn-ghost btn-sm">
+                                                <icon name="shield-check" class="size-4" /> Make admin
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</section>

@@ -1,0 +1,62 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Inbox";
+
+    (string Icon, string Tone) EmailIcon(EmailType type) => type switch
+    {
+        EmailType.Welcome => ("sparkles", "text-primary"),
+        EmailType.OrderConfirmation => ("check-circle", "text-success"),
+        EmailType.OrderShipped => ("truck", "text-primary"),
+        EmailType.OrderDelivered => ("check-circle", "text-success"),
+        EmailType.OrderCancelled => ("alert-circle", "text-destructive"),
+        _ => ("mail", "text-muted-foreground")
+    };
+}
+<div class="mb-6">
+    <h1 class="flex items-center gap-2 text-2xl font-bold tracking-tight">
+        Inbox
+        <span class="badge badge-secondary">@Model.Emails.Count</span>
+    </h1>
+    <p class="text-sm text-muted-foreground">Emails the mock sender would have delivered.</p>
+</div>
+
+<div class="mb-4 flex justify-end">
+    @if (Model.Emails.Count > 0)
+    {
+        <form method="post" asp-page-handler="ClearAll" data-confirm="Clear all emails from the inbox? This cannot be undone.">
+            <button type="submit" class="btn btn-outline btn-sm text-destructive">
+                <icon name="trash-2" class="size-4" /> Clear all
+            </button>
+        </form>
+    }
+</div>
+
+@if (Model.Emails.Count == 0)
+{
+    <section class="card">
+        <div class="card-content flex flex-col items-center gap-2 py-16 text-center text-muted-foreground">
+            <icon name="inbox" class="size-8" />
+            <p class="text-sm">No emails yet — place an order to see one.</p>
+        </div>
+    </section>
+}
+else
+{
+    <div class="divide-y rounded-xl border bg-card">
+        @foreach (var email in Model.Emails)
+        {
+            var (icon, tone) = EmailIcon(email.Type);
+            <details class="group">
+                <summary class="flex cursor-pointer select-none list-none items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50 [&::-webkit-details-marker]:hidden">
+                    <icon name="@icon" class="size-4 shrink-0 @tone" />
+                    <span class="min-w-0 flex-1 truncate text-sm font-medium" title="@email.Subject">@email.Subject</span>
+                    <span class="hidden max-w-48 truncate text-xs text-muted-foreground sm:block" title="@email.To">&rarr; @email.To</span>
+                    <span class="whitespace-nowrap text-xs text-muted-foreground">@email.SentAt.Friendly()</span>
+                    <icon name="chevron-down" class="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+                </summary>
+                <div class="whitespace-pre-line px-4 pb-4 pl-11 text-sm text-muted-foreground">@email.Body</div>
+            </details>
+        }
+    </div>
+}

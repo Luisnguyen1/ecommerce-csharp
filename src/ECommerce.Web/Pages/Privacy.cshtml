@@ -1,0 +1,55 @@
+@page
+@model PrivacyModel
+
+<div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-3xl space-y-6">
+
+        <div class="space-y-2">
+            <h1 class="text-3xl font-bold tracking-tight">Privacy</h1>
+            <p class="text-muted-foreground">Last updated October 2026 · Demo placeholder policy</p>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">The short version</h2>
+                <p class="card-description">
+                    Nimbus is a portfolio demo storefront — it is not a real business, so there is nothing sensitive to protect.
+                </p>
+            </div>
+            <div class="card-content space-y-5 text-sm leading-relaxed text-muted-foreground">
+                <div class="space-y-2">
+                    <h3 class="font-medium text-foreground">What this demo stores</h3>
+                    <p>
+                        Everything you do here — accounts, carts, orders, reviews and wishlists — is kept in a local
+                        <span class="font-mono text-foreground">database.json</span> file that is reset when the demo data is re-seeded.
+                        Please use a throwaway email and password you do not care about.
+                    </p>
+                </div>
+                <div class="space-y-2">
+                    <h3 class="font-medium text-foreground">Cookies</h3>
+                    <p>
+                        Two functional cookies are set: <span class="font-mono text-foreground">nimbus_auth</span> keeps you signed in,
+                        and <span class="font-mono text-foreground">nimbus_cart</span> remembers an anonymous shopping cart.
+                        A <span class="font-mono text-foreground">theme</span> entry in local storage remembers light or dark mode.
+                        No analytics or tracking cookies are used.
+                    </p>
+                </div>
+                <div class="space-y-2">
+                    <h3 class="font-medium text-foreground">Payments</h3>
+                    <p>
+                        Checkout is a mock. Card numbers are validated for shape (Luhn) and then discarded — nothing is charged
+                        and no payment details are stored. Try the test card 4242 4242 4242 4242.
+                    </p>
+                </div>
+                <div class="space-y-2">
+                    <h3 class="font-medium text-foreground">Contact</h3>
+                    <p>
+                        There is no one to contact — this page exists purely to round out the storefront. In a real application,
+                        this is where a data controller, retention policy and contact route would live.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

@@ -1,0 +1,186 @@
+@page "{id}"
+@model DetailsModel
+@{
+    ViewData["Title"] = $"Order {Model.Order.OrderNumber}";
+    var address = Model.Order.ShippingAddress;
+    var itemCount = Model.Order.Lines.Sum(l => l.Quantity);
+
+    string[] steps = ["Placed", "Paid", "Shipped", "Delivered"];
+    var current = Model.Order.Status switch
+    {
+        OrderStatus.Placed => 0,
+        OrderStatus.Paid => 1,
+        OrderStatus.Shipped => 2,
+        OrderStatus.Delivered => 3,
+        _ => -1
+    };
+}
+<div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <a asp-page="/Account/Orders" class="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground">
+        <icon name="chevron-left" class="size-4" /> Back to orders
+    </a>
+
+    <div class="mb-8 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-3">
+            <h1 class="font-mono text-2xl font-bold tracking-tight">@Model.Order.OrderNumber</h1>
+            <partial name="_StatusBadge" model="Model.Order.Status" />
+        </div>
+        <p class="text-sm text-muted-foreground">Placed @Model.Order.PlacedAt.Friendly()</p>
+    </div>
+
+    <div class="grid items-start gap-8 lg:grid-cols-[2fr_1fr]">
+        <div class="space-y-8">
+            <!-- Status timeline -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Progress</h2>
+                </div>
+                <div class="card-content">
+                    @if (current < 0)
+                    {
+                        <div class="alert alert-destructive">
+                            <icon name="alert-circle" />
+                            <div>
+                                <p class="alert-title">This order was cancelled</p>
+                                <div class="alert-description">
+                                    <p>If you were charged, the payment has been voided.</p>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="flex items-start">
+                            @for (var i = 0; i < steps.Length; i++)
+                            {
+                                if (i > 0)
+                                {
+                                    <div class="mt-[17px] h-0.5 flex-1 @(i <= current ? "bg-primary" : "bg-border")"></div>
+                                }
+                                <div class="flex w-16 shrink-0 flex-col items-center gap-2 sm:w-24">
+                                    <span class="flex size-9 items-center justify-center rounded-full border text-sm font-semibold transition-colors @(i < current
+                                        ? "border-primary bg-primary text-primary-foreground"
+                                        : i == current
+                                            ? "border-primary bg-background text-primary ring-4 ring-ring/20"
+                                            : "border-border bg-muted text-muted-foreground")">
+                                        @if (i <= current)
+                                        {
+                                            <icon name="check" class="size-4" />
+                                        }
+                                        else
+                                        {
+                                            <span>@(i + 1)</span>
+                                        }
+                                    </span>
+                                    <span class="text-xs font-medium @(i <= current ? "text-foreground" : "text-muted-foreground")">@steps[i]</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Items -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Items (@itemCount)</h2>
+                </div>
+                <ul class="card-content divide-y">
+                    @foreach (var line in Model.Order.Lines)
+                    {
+                        <li class="flex items-center gap-4 py-4 first:pt-0 last:pb-0">
+                            <img src="@line.ImageUrl" alt="@line.ProductName" class="size-16 shrink-0 rounded-lg border object-cover" loading="lazy" />
+                            <div class="min-w-0 flex-1">
+                                <p class="font-medium leading-snug">@line.ProductName</p>
+                                <p class="text-sm text-muted-foreground">@line.VariantName</p>
+                                <p class="font-mono text-xs text-muted-foreground">@line.Sku</p>
+                            </div>
+                            <div class="shrink-0 text-right text-sm">
+                                <p class="text-muted-foreground">@line.Quantity × @line.UnitPrice.Money()</p>
+                                <p class="font-semibold tabular-nums">@line.LineTotal.Money()</p>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+
+        <div class="space-y-8">
+            <!-- Summary -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Summary</h2>
+                </div>
+                <div class="card-content space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-muted-foreground">Subtotal</span>
+                        <span class="tabular-nums">@Model.Order.Subtotal.Money()</span>
+                    </div>
+                    @if (Model.Order.Discount > 0)
+                    {
+                        <div class="flex justify-between text-success">
+                            <span class="inline-flex items-center gap-1">
+                                <icon name="tag" class="size-3.5" /> Discount @(string.IsNullOrEmpty(Model.Order.CouponCode) ? "" : $"({Model.Order.CouponCode})")
+                            </span>
+                            <span class="tabular-nums">−@Model.Order.Discount.Money()</span>
+                        </div>
+                    }
+                    <div class="flex justify-between">
+                        <span class="text-muted-foreground">Shipping</span>
+                        <span class="tabular-nums">@(Model.Order.ShippingFee == 0 ? "Free" : Model.Order.ShippingFee.Money())</span>
+                    </div>
+                    <div class="flex justify-between border-t pt-3 text-base font-bold">
+                        <span>Total</span>
+                        <span class="tabular-nums">@Model.Order.Total.Money()</span>
+                    </div>
+                    <div class="separator"></div>
+                    <p class="flex items-center gap-2 text-muted-foreground">
+                        <icon name="credit-card" class="size-4" /> Paid with •••• @Model.Order.CardLast4
+                    </p>
+                    <p class="font-mono text-xs text-muted-foreground break-all">@Model.Order.PaymentTransactionId</p>
+                </div>
+            </div>
+
+            <!-- Shipping address -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Shipping address</h2>
+                </div>
+                <div class="card-content text-sm">
+                    <div class="flex gap-3">
+                        <icon name="map-pin" class="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                        <div class="space-y-0.5">
+                            <p class="font-medium">@address.FullName</p>
+                            <p class="text-muted-foreground">
+                                @address.Line1@if (!string.IsNullOrWhiteSpace(address.Line2))
+                                {<span>, @address.Line2</span>}
+                            </p>
+                            <p class="text-muted-foreground">@address.City, @address.State @address.PostalCode</p>
+                            <p class="text-muted-foreground">@address.Country</p>
+                            <p class="flex items-center gap-1.5 pt-1 text-muted-foreground"><icon name="mail" class="size-3.5" /> @address.Email</p>
+                            <p class="flex items-center gap-1.5 text-muted-foreground"><icon name="user" class="size-3.5" /> @address.Phone</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shipping method -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Shipping method</h2>
+                </div>
+                <div class="card-content">
+                    <div class="flex items-center gap-3 text-sm">
+                        <icon name="truck" class="size-5 shrink-0 text-muted-foreground" />
+                        <div>
+                            <p class="font-medium">@Model.Order.ShippingMethodName</p>
+                            <p class="text-muted-foreground">
+                                @(Model.Order.ShippingFee == 0 ? "Free" : Model.Order.ShippingFee.Money())
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

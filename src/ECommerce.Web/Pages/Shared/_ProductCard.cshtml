@@ -1,0 +1,88 @@
+@model ECommerce.Core.Models.ProductCardView
+@{
+    var wishlistIds = ViewData["WishlistIds"] as HashSet<string> ?? [];
+    var inWishlist = wishlistIds.Contains(Model.Id);
+    var outOfStock = Model.Stock <= 0;
+}
+<div class="group relative flex flex-col overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm transition-all hover:shadow-md">
+    <div class="product-img relative">
+        <a asp-page="/Product/Details" asp-route-slug="@Model.Slug" class="block h-full" tabindex="-1" aria-hidden="true">
+            <img src="@Model.ImageUrl" alt="@Model.Name" loading="lazy" class="aspect-square h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+        </a>
+
+        @if (!string.IsNullOrEmpty(Model.Badge))
+        {
+            <span class="badge badge-default absolute left-3 top-3">@Model.Badge</span>
+        }
+        @if (outOfStock && Model.IsActive)
+        {
+            <span class="badge badge-secondary absolute left-3 bottom-3">Out of stock</span>
+        }
+        @if (!Model.IsActive)
+        {
+            <span class="badge badge-destructive absolute left-3 top-3">Inactive</span>
+        }
+
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <form asp-page="/Account/Wishlist" asp-page-handler="Toggle" method="post" class="absolute right-3 top-3">
+                <input type="hidden" name="productId" value="@Model.Id" />
+                <input type="hidden" name="returnUrl" value="@ViewContext.HttpContext.Request.Path@ViewContext.HttpContext.Request.QueryString" />
+                <button type="submit" class="flex size-8 items-center justify-center rounded-full bg-background/90 shadow-sm backdrop-blur transition-colors hover:bg-background"
+                        aria-label="@(inWishlist ? "Remove from" : "Add to") wishlist" title="@(inWishlist ? "Remove from" : "Add to") wishlist">
+                    <icon name="heart" class="size-4 @(inWishlist ? "fill-destructive text-destructive" : "text-muted-foreground")" fill="@(inWishlist)" />
+                </button>
+            </form>
+        }
+    </div>
+
+    <div class="flex flex-1 flex-col gap-1.5 p-4">
+        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">@Model.Brand · @Model.CategoryName</p>
+        <a asp-page="/Product/Details" asp-route-slug="@Model.Slug" class="line-clamp-2 font-medium leading-snug hover:underline">@Model.Name</a>
+
+        @if (Model.RatingCount > 0)
+        {
+            <partial name="_RatingStars" model='(Model.RatingAverage, Model.RatingCount, "size-3.5")' />
+        }
+        else
+        {
+            <div class="h-5"></div>
+        }
+
+        <div class="mt-auto flex items-baseline gap-2 pt-1">
+            <span class="font-bold">@Model.FromPrice.Money()</span>
+            @if (Model.CompareAtPrice is { } compare && compare > Model.FromPrice)
+            {
+                <span class="text-sm text-muted-foreground line-through">@compare.Money()</span>
+                <span class="badge badge-success">Save @((compare - Model.FromPrice).Money())</span>
+            }
+        </div>
+        @if (!outOfStock && Model.Stock <= 5)
+        {
+            <p class="text-xs text-warning">Only @Model.Stock left</p>
+        }
+
+        <div class="pt-2">
+            @if (!Model.IsActive || outOfStock)
+            {
+                <button type="button" class="btn btn-secondary w-full" disabled>@(!Model.IsActive ? "Unavailable" : "Out of stock")</button>
+            }
+            else if (Model.HasVariants)
+            {
+                <a asp-page="/Product/Details" asp-route-slug="@Model.Slug" class="btn btn-outline w-full">View options</a>
+            }
+            else
+            {
+                <form asp-page="/Cart/Index" asp-page-handler="Add" method="post" class="w-full">
+                    <input type="hidden" name="productId" value="@Model.Id" />
+                    <input type="hidden" name="variantId" value="@Model.DefaultVariantId" />
+                    <input type="hidden" name="quantity" value="1" />
+                    <input type="hidden" name="returnUrl" value="@ViewContext.HttpContext.Request.Path@ViewContext.HttpContext.Request.QueryString" />
+                    <button type="submit" class="btn btn-primary w-full">
+                        <icon name="shopping-cart" class="size-4" /> Add to cart
+                    </button>
+                </form>
+            }
+        </div>
+    </div>
+</div>

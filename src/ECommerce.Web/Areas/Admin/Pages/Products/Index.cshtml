@@ -1,0 +1,132 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Products";
+}
+<div class="mb-6 flex flex-wrap items-end gap-4">
+    <div>
+        <h1 class="flex items-center gap-2 text-2xl font-bold tracking-tight">
+            Products
+            <span class="badge badge-secondary">@Model.Results.TotalCount</span>
+        </h1>
+        <p class="text-sm text-muted-foreground">Manage the catalog — active and hidden items.</p>
+    </div>
+    <div class="ml-auto flex flex-wrap items-center gap-2">
+        <form method="get" class="flex gap-2">
+            <div class="relative">
+                <icon name="search" class="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <input type="search" name="q" value="@Model.Q" placeholder="Search products…" class="input w-56 pl-8" />
+            </div>
+            <button type="submit" class="btn btn-outline">Search</button>
+        </form>
+        <a asp-page="./Create" class="btn btn-primary">
+            <icon name="plus" class="size-4" /> New product
+        </a>
+    </div>
+</div>
+
+<section class="card">
+    <div class="card-content overflow-x-auto">
+        @if (Model.Results.Items.Count == 0)
+        {
+            <div class="flex flex-col items-center gap-2 py-16 text-center text-muted-foreground">
+                <icon name="package" class="size-8" />
+                <p class="text-sm">
+                    @(string.IsNullOrWhiteSpace(Model.Q) ? "No products yet." : $"No products match “{Model.Q}”.")
+                </p>
+                @if (!string.IsNullOrWhiteSpace(Model.Q))
+                {
+                    <a asp-page="./Index" class="btn btn-outline btn-sm mt-1">Clear search</a>
+                }
+            </div>
+        }
+        else
+        {
+            <table class="table-shad">
+                <thead>
+                    <tr>
+                        <th class="w-12"></th>
+                        <th>Product</th>
+                        <th>Category</th>
+                        <th class="text-right">Price</th>
+                        <th class="text-right">Stock</th>
+                        <th>Status</th>
+                        <th class="text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var product in Model.Results.Items)
+                    {
+                        <tr>
+                            <td>
+                                @if (string.IsNullOrEmpty(product.ImageUrl))
+                                {
+                                    <span class="flex size-12 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                                        <icon name="image" class="size-4" />
+                                    </span>
+                                }
+                                else
+                                {
+                                    <img src="@product.ImageUrl" alt="" class="size-12 rounded-lg border object-cover" loading="lazy" />
+                                }
+                            </td>
+                            <td>
+                                <div class="flex flex-col">
+                                    <a asp-page="./Edit" asp-route-id="@product.Id" class="font-medium hover:underline">@product.Name</a>
+                                    <span class="font-mono text-xs text-muted-foreground">@product.Slug</span>
+                                </div>
+                            </td>
+                            <td class="text-muted-foreground">@product.CategoryName</td>
+                            <td class="whitespace-nowrap text-right">
+                                <div class="flex flex-col items-end">
+                                    <span>@product.FromPrice.Money()</span>
+                                    @if (product.CompareAtPrice is { } compareAt)
+                                    {
+                                        <span class="text-xs text-muted-foreground line-through">@compareAt.Money()</span>
+                                    }
+                                </div>
+                            </td>
+                            <td class="whitespace-nowrap text-right">
+                                <span class="inline-flex items-center gap-1.5">
+                                    <span class="font-medium">@product.Stock</span>
+                                    @if (Model.IsLowStock(product.Id))
+                                    {
+                                        <span class="badge badge-warning">Low</span>
+                                    }
+                                </span>
+                            </td>
+                            <td>
+                                <div class="flex flex-wrap gap-1.5">
+                                    @if (product.IsFeatured)
+                                    {
+                                        <span class="badge badge-secondary"><icon name="star" class="size-3" fill="true" /> Featured</span>
+                                    }
+                                    @if (product.IsActive)
+                                    {
+                                        <span class="badge badge-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-destructive">Inactive</span>
+                                    }
+                                </div>
+                            </td>
+                            <td>
+                                <div class="flex items-center justify-end gap-1">
+                                    <a asp-page="./Edit" asp-route-id="@product.Id" class="btn btn-ghost btn-sm" title="Edit">
+                                        <icon name="pencil" class="size-4" /> Edit
+                                    </a>
+                                    <form method="post" asp-page-handler="Delete" asp-route-id="@product.Id" data-confirm="Delete product? Order history keeps snapshots.">
+                                        <button type="submit" class="btn btn-ghost btn-sm text-destructive" title="Delete">
+                                            <icon name="trash-2" class="size-4" /> Delete
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</section>

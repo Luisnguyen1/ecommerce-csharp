@@ -1,0 +1,89 @@
+@page "/Checkout/Success/{orderNumber?}"
+@model SuccessModel
+@{
+    ViewData["Title"] = "Order confirmed";
+    var firstName = Model.Order.ShippingAddress.FullName.Split(' ', 2)[0];
+    var isAuthed = User.Identity?.IsAuthenticated == true;
+}
+<div class="mx-auto max-w-2xl px-4 py-12 sm:px-6 lg:px-8">
+    <div class="card animate-slide-up items-center py-10 text-center">
+        <div class="flex size-16 items-center justify-center rounded-full bg-success/15 text-success">
+            <icon name="check" class="size-8" />
+        </div>
+
+        <div class="space-y-1">
+            <h1 class="text-2xl font-bold tracking-tight">Order confirmed</h1>
+            <p class="text-sm text-muted-foreground">
+                Thanks @firstName — we emailed a confirmation to
+                <span class="font-medium text-foreground">@Model.Order.Email</span>.
+                (This demo just files it into the mock inbox.)
+            </p>
+        </div>
+
+        <div class="w-full max-w-sm rounded-xl border border-dashed bg-muted/30 px-4 py-3">
+            <p class="text-xs uppercase tracking-wide text-muted-foreground">Order number</p>
+            <p class="font-mono text-lg font-bold tracking-wider">@Model.Order.OrderNumber</p>
+            <p class="mt-1 inline-flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                <icon name="copy" class="size-3" /> Keep this number handy to track your order
+            </p>
+        </div>
+
+        <div class="w-full max-w-sm space-y-2 text-left text-sm">
+            <div class="separator"></div>
+            @foreach (var line in Model.Order.Lines)
+            {
+                <div class="flex items-center gap-3">
+                    <img src="@line.ImageUrl" alt="@line.ProductName" class="size-10 shrink-0 rounded-md border object-cover" loading="lazy" />
+                    <div class="min-w-0 flex-1">
+                        <p class="line-clamp-1 font-medium">@line.ProductName</p>
+                        <p class="text-xs text-muted-foreground">@line.VariantName · Qty @line.Quantity</p>
+                    </div>
+                    <span class="shrink-0 font-medium tabular-nums">@line.LineTotal.Money()</span>
+                </div>
+            }
+            <div class="separator"></div>
+            <div class="flex justify-between text-muted-foreground">
+                <span>Subtotal</span>
+                <span class="tabular-nums">@Model.Order.Subtotal.Money()</span>
+            </div>
+            @if (Model.Order.Discount > 0)
+            {
+                <div class="flex justify-between text-success">
+                    <span class="inline-flex items-center gap-1"><icon name="tag" class="size-3.5" /> Discount</span>
+                    <span class="tabular-nums">−@Model.Order.Discount.Money()</span>
+                </div>
+            }
+            <div class="flex justify-between text-muted-foreground">
+                <span>Shipping</span>
+                <span class="tabular-nums">@(Model.Order.ShippingFee == 0 ? "Free" : Model.Order.ShippingFee.Money())</span>
+            </div>
+            <div class="flex justify-between border-t pt-2 text-base font-bold">
+                <span>Total</span>
+                <span class="tabular-nums">@Model.Order.Total.Money()</span>
+            </div>
+            <p class="flex items-center justify-center gap-1.5 pt-1 text-xs text-muted-foreground">
+                <icon name="credit-card" class="size-3.5" />
+                Paid with card •••• @Model.Order.CardLast4
+            </p>
+        </div>
+
+        <div class="flex w-full max-w-sm flex-col gap-3">
+            @if (isAuthed)
+            {
+                <a asp-page="/Account/Orders/Details" asp-route-id="@Model.Order.Id" class="btn btn-primary btn-lg w-full">
+                    View order <icon name="arrow-right" class="size-4" />
+                </a>
+            }
+            else
+            {
+                <div class="alert alert-default border-dashed text-left">
+                    <icon name="package" />
+                    <div class="alert-description">
+                        <p>Checking out as a guest — save your order number above to track this purchase.</p>
+                    </div>
+                </div>
+            }
+            <a asp-page="/Catalog/Index" class="btn btn-outline btn-lg w-full">Continue shopping</a>
+        </div>
+    </div>
+</div>

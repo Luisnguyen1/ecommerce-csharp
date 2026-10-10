@@ -1,0 +1,162 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Dashboard";
+    var chart = Model.RevenueChart;
+}
+<div class="mb-8 flex flex-wrap items-end gap-4">
+    <div>
+        <h1 class="text-2xl font-bold tracking-tight">Dashboard</h1>
+        <p class="text-sm text-muted-foreground">Store health at a glance.</p>
+    </div>
+    <div class="ml-auto flex gap-2">
+        <a asp-page="/Products/Create" asp-area="Admin" class="btn btn-primary btn-md">
+            <icon name="plus" class="size-4" /> New product
+        </a>
+        <a asp-page="/Orders/Index" asp-area="Admin" class="btn btn-outline btn-md">
+            <icon name="truck" class="size-4" /> View orders
+        </a>
+    </div>
+</div>
+
+<!-- Stat cards -->
+<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="card gap-4">
+        <div class="card-content flex items-start justify-between">
+            <div>
+                <p class="text-sm text-muted-foreground">Revenue</p>
+                <p class="stat-value">@Model.Stats.Revenue.Money()</p>
+            </div>
+            <span class="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <icon name="dollar-sign" class="size-4" />
+            </span>
+        </div>
+        <div class="card-footer text-xs text-muted-foreground">
+            <icon name="trending-up" class="size-3.5 text-success" /> Excludes cancelled orders
+        </div>
+    </div>
+
+    <div class="card gap-4">
+        <div class="card-content flex items-start justify-between">
+            <div>
+                <p class="text-sm text-muted-foreground">Orders</p>
+                <p class="stat-value">@Model.Stats.OrderCount</p>
+            </div>
+            <span class="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <icon name="package" class="size-4" />
+            </span>
+        </div>
+        <div class="card-footer text-xs text-muted-foreground">
+            <icon name="check-circle" class="size-3.5 text-success" /> All-time, non-cancelled
+        </div>
+    </div>
+
+    <div class="card gap-4">
+        <div class="card-content flex items-start justify-between">
+            <div>
+                <p class="text-sm text-muted-foreground">Avg order value</p>
+                <p class="stat-value">@Model.Stats.AvgOrderValue.Money()</p>
+            </div>
+            <span class="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <icon name="credit-card" class="size-4" />
+            </span>
+        </div>
+        <div class="card-footer text-xs text-muted-foreground">
+            <icon name="trending-up" class="size-3.5 text-success" /> Revenue / orders
+        </div>
+    </div>
+
+    <div class="card gap-4">
+        <div class="card-content flex items-start justify-between">
+            <div>
+                <p class="text-sm text-muted-foreground">Low stock</p>
+                <p class="stat-value text-warning">@Model.Stats.LowStockCount</p>
+            </div>
+            <span class="flex size-9 items-center justify-center rounded-lg bg-warning/15 text-warning">
+                <icon name="alert-circle" class="size-4" />
+            </span>
+        </div>
+        <div class="card-footer text-xs text-muted-foreground">
+            <icon name="alert-circle" class="size-3.5 text-warning" /> Products with a variant ≤ 5
+        </div>
+    </div>
+</div>
+
+<div class="mt-6 grid gap-6 xl:grid-cols-5">
+    <!-- Revenue chart -->
+    <section class="card xl:col-span-2">
+        <div class="card-header">
+            <h2 class="card-title">Revenue — last 14 days</h2>
+            <p class="card-description">Hover a bar for the daily total.</p>
+        </div>
+        <div class="card-content">
+            <div class="flex h-40 items-end gap-1">
+                @foreach (var point in chart)
+                {
+                    var pct = Model.MaxDailyRevenue == 0 ? 0 : (int)Math.Round(point.Revenue / Model.MaxDailyRevenue * 100);
+                    var style = point.Revenue == 0 ? "height:0" : $"height:{pct}%;min-height:3px";
+                    var tooltip = $"{point.Date:MMM d, yyyy} — {point.Revenue.Money()}";
+                    <div class="flex h-full flex-1 items-end" title="@tooltip">
+                        <div class="w-full rounded-t bg-primary/75 transition-colors hover:bg-primary" style="@style"></div>
+                    </div>
+                }
+            </div>
+            <div class="mt-2 flex justify-between text-xs text-muted-foreground">
+                <span>@chart.First().Date.ToString("MMM d")</span>
+                <span>@chart.Last().Date.ToString("MMM d")</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Recent orders -->
+    <section class="card xl:col-span-3">
+        <div class="card-header flex-row items-center justify-between">
+            <div>
+                <h2 class="card-title">Recent orders</h2>
+                <p class="card-description">The 8 most recent checkouts.</p>
+            </div>
+            <a asp-page="/Orders/Index" asp-area="Admin" class="btn btn-ghost btn-sm text-muted-foreground">
+                View all <icon name="arrow-right" class="size-4" />
+            </a>
+        </div>
+        <div class="card-content overflow-x-auto">
+            @if (Model.RecentOrders.Count == 0)
+            {
+                <div class="flex flex-col items-center gap-2 py-10 text-center text-muted-foreground">
+                    <icon name="package" class="size-8" />
+                    <p class="text-sm">No orders yet — they will appear here.</p>
+                </div>
+            }
+            else
+            {
+                <table class="table-shad">
+                    <thead>
+                        <tr>
+                            <th>Order</th>
+                            <th>Customer</th>
+                            <th>Placed</th>
+                            <th class="text-right">Total</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var order in Model.RecentOrders)
+                        {
+                            <tr>
+                                <td>
+                                    <a asp-page="/Orders/Details" asp-area="Admin" asp-route-id="@order.Id" class="font-mono text-sm font-medium hover:underline">
+                                        @order.OrderNumber
+                                    </a>
+                                </td>
+                                <td class="max-w-48 truncate text-muted-foreground" title="@order.Email">@order.Email</td>
+                                <td class="whitespace-nowrap text-muted-foreground">@order.PlacedAt.Friendly()</td>
+                                <td class="text-right font-semibold">@order.Total.Money()</td>
+                                <td><partial name="_StatusBadge" model="order.Status" /></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </section>
+</div>

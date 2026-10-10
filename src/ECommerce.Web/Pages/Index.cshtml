@@ -1,0 +1,134 @@
+@page
+@model IndexModel
+
+<div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div class="space-y-14">
+
+        <!-- Hero -->
+        <section class="rounded-3xl bg-gradient-to-br from-primary/5 via-transparent to-primary/10 p-6 sm:p-10 lg:p-12">
+            <div class="grid items-center gap-10 lg:grid-cols-2">
+                <div class="space-y-6">
+                    <span class="badge badge-secondary gap-1.5">
+                        <icon name="sparkles" class="size-3.5" /> New season drop
+                    </span>
+                    <h1 class="text-4xl font-extrabold tracking-tight sm:text-5xl">Tech, beautifully delivered.</h1>
+                    <p class="max-w-lg text-lg text-muted-foreground">
+                        Curated audio, wearables and desk gear from brands we love — shipped fast,
+                        covered by a 2-year warranty, and easy to return if it is not a fit.
+                    </p>
+                    <div class="flex flex-wrap gap-3">
+                        <a asp-page="/Catalog/Index" class="btn btn-primary btn-lg">
+                            Shop now <icon name="arrow-right" class="size-4" />
+                        </a>
+                        <a href="#categories" class="btn btn-outline btn-lg">Explore categories</a>
+                    </div>
+                    <div class="flex flex-wrap gap-x-6 gap-y-2 pt-2 text-sm text-muted-foreground">
+                        <span class="flex items-center gap-1.5"><icon name="truck" class="size-4" /> Free shipping over $75</span>
+                        <span class="flex items-center gap-1.5"><icon name="refresh" class="size-4" /> 30-day returns</span>
+                        <span class="flex items-center gap-1.5"><icon name="shield-check" class="size-4" /> 2-year warranty</span>
+                    </div>
+                </div>
+                <div class="overflow-hidden rounded-2xl border bg-card shadow-sm">
+                    <img src="~/images/hero.jpg" alt="Photo of tech gear from the Nimbus catalog" class="aspect-[4/3] h-full w-full object-cover" />
+                </div>
+            </div>
+        </section>
+
+        <!-- Categories -->
+        <section id="categories" class="space-y-6 scroll-mt-24">
+            <div class="flex items-end justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold tracking-tight">Shop by category</h2>
+                    <p class="text-sm text-muted-foreground">Six collections, one obsession with detail.</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+                @foreach (var category in Model.Categories)
+                {
+                    <a asp-page="/Catalog/Index" asp-route-category="@category.Slug"
+                       class="group rounded-xl border bg-card p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+                        <span class="flex size-12 items-center justify-center rounded-lg bg-muted text-2xl" aria-hidden="true">@category.Icon</span>
+                        <p class="mt-3 font-medium leading-snug group-hover:underline">@category.Name</p>
+                        <p class="line-clamp-1 text-xs text-muted-foreground">@(string.IsNullOrWhiteSpace(category.Description) ? "Explore the collection" : category.Description)</p>
+                    </a>
+                }
+            </div>
+        </section>
+
+        <!-- Featured -->
+        @if (Model.Featured.Count > 0)
+        {
+            <section class="space-y-6">
+                <div class="flex items-end justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold tracking-tight">Featured products</h2>
+                        <p class="text-sm text-muted-foreground">Hand-picked favorites from the Nimbus team.</p>
+                    </div>
+                    <a asp-page="/Catalog/Index" asp-route-featured="true" class="btn btn-ghost btn-sm text-muted-foreground hover:text-foreground">
+                        View all <icon name="arrow-right" class="size-4" />
+                    </a>
+                </div>
+                <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6 lg:grid-cols-4">
+                    @foreach (var product in Model.Featured)
+                    {
+                        <partial name="_ProductCard" model="product" />
+                    }
+                </div>
+            </section>
+        }
+
+        <!-- New arrivals -->
+        @if (Model.NewArrivals.Count > 0)
+        {
+            <section class="space-y-6">
+                <div class="flex items-end justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold tracking-tight">New arrivals</h2>
+                        <p class="text-sm text-muted-foreground">Fresh from the latest season drop.</p>
+                    </div>
+                    <a asp-page="/Catalog/Index" asp-route-sort="newest" class="btn btn-ghost btn-sm text-muted-foreground hover:text-foreground">
+                        View all <icon name="arrow-right" class="size-4" />
+                    </a>
+                </div>
+                <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6 lg:grid-cols-4">
+                    @foreach (var product in Model.NewArrivals)
+                    {
+                        <partial name="_ProductCard" model="product" />
+                    }
+                </div>
+            </section>
+        }
+
+        <!-- Perks strip -->
+        <section class="grid gap-6 sm:grid-cols-3">
+            <div class="flex items-center gap-4 rounded-xl border bg-card p-6 shadow-sm">
+                <span class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <icon name="truck" class="size-5" />
+                </span>
+                <div>
+                    <p class="font-semibold">Free shipping</p>
+                    <p class="text-sm text-muted-foreground">On every order over $75.</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4 rounded-xl border bg-card p-6 shadow-sm">
+                <span class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <icon name="refresh" class="size-5" />
+                </span>
+                <div>
+                    <p class="font-semibold">Easy returns</p>
+                    <p class="text-sm text-muted-foreground">30 days, no questions asked.</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4 rounded-xl border bg-card p-6 shadow-sm">
+                <span class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <icon name="credit-card" class="size-5" />
+                </span>
+                <div>
+                    <p class="font-semibold">Secure mock checkout</p>
+                    <p class="text-sm text-muted-foreground">Safe to play with — no real charges.</p>
+                </div>
+            </div>
+        </section>
+
+    </div>
+</div>

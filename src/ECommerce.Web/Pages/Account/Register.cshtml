@@ -1,0 +1,68 @@
+@page "/Account/Register"
+@model RegisterModel
+@{
+    ViewData["Title"] = "Create account";
+}
+<div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+    <div class="mx-auto w-full max-w-md">
+        <div class="card animate-slide-up">
+            <div class="card-header items-center text-center">
+                <div class="mx-auto flex size-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                    <icon name="user" class="size-6" />
+                </div>
+                <h1 class="text-2xl font-bold tracking-tight">Create your account</h1>
+                <p class="card-description">Orders, wishlist and faster checkout — all in one place.</p>
+            </div>
+
+            <form method="post" novalidate class="card-content space-y-4">
+                @if (!ViewData.ModelState.IsValid && ViewData.ModelState.TryGetValue(string.Empty, out var modelEntry) && modelEntry.Errors.Count > 0)
+                {
+                    <div class="alert alert-destructive" role="alert">
+                        <icon name="alert-circle" />
+                        <div>
+                            <p class="alert-title">@modelEntry.Errors[0].ErrorMessage</p>
+                        </div>
+                    </div>
+                }
+
+                <div class="form-field">
+                    <label class="label" for="FullName">Full name</label>
+                    <input asp-for="FullName" class="input" autocomplete="name" placeholder="Ada Lovelace" required autofocus />
+                    <span asp-validation-for="FullName" class="text-xs text-destructive"></span>
+                </div>
+                <div class="form-field">
+                    <label class="label" for="Email">Email</label>
+                    <input asp-for="Email" type="email" class="input" autocomplete="username email"
+                           placeholder="you@example.com" required />
+                    <span asp-validation-for="Email" class="text-xs text-destructive"></span>
+                </div>
+                <div class="form-field">
+                    <label class="label" for="Password">Password</label>
+                    <input asp-for="Password" type="password" class="input" autocomplete="new-password"
+                           placeholder="At least 8 characters" minlength="8" required />
+                    <span asp-validation-for="Password" class="text-xs text-destructive"></span>
+                </div>
+                <div class="form-field">
+                    <label class="label" for="ConfirmPassword">Confirm password</label>
+                    <input asp-for="ConfirmPassword" type="password" class="input" autocomplete="new-password"
+                           placeholder="Repeat your password" required />
+                    <span asp-validation-for="ConfirmPassword" class="text-xs text-destructive"></span>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg w-full">
+                    Create account <icon name="arrow-right" class="size-4" />
+                </button>
+            </form>
+
+            <div class="card-footer flex-col gap-2">
+                <p class="text-center text-sm text-muted-foreground">
+                    Already have an account?
+                    <a asp-page="/Account/Login" class="font-medium text-foreground underline-offset-4 hover:underline">Sign in</a>
+                </p>
+                <p class="text-center text-xs text-muted-foreground">
+                    We store your details locally in database.json — this is a learning demo, not a real store.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>

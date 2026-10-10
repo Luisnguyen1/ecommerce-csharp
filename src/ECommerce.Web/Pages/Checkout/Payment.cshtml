@@ -1,0 +1,159 @@
+@page "/Checkout/Payment"
+@model PaymentModel
+@{
+    ViewData["Title"] = "Payment";
+    var address = Model.State.Address;
+}
+<div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div class="mb-8">
+        <a asp-page="/Checkout/Index" class="mb-2 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground">
+            <icon name="chevron-left" class="size-4" /> Back to shipping details
+        </a>
+        <h1 class="text-2xl font-bold tracking-tight sm:text-3xl">Payment</h1>
+        <p class="mt-1 text-sm text-muted-foreground">One last step — then your gear is on its way.</p>
+    </div>
+
+    <div class="grid items-start gap-8 lg:grid-cols-[1fr_380px]">
+        <!-- Order recap -->
+        <div class="space-y-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Shipping to</h2>
+                </div>
+                <div class="card-content space-y-4 text-sm">
+                    <div class="flex gap-3">
+                        <icon name="map-pin" class="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                        <div class="space-y-0.5">
+                            <p class="font-medium">@address.FullName</p>
+                            <p class="text-muted-foreground">
+                                @address.Line1@if (!string.IsNullOrWhiteSpace(address.Line2))
+                                {<span>, @address.Line2</span>}
+                            </p>
+                            <p class="text-muted-foreground">@address.City, @address.State @address.PostalCode</p>
+                            <p class="text-muted-foreground">@address.Country</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-3">
+                        <icon name="mail" class="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                        <p class="text-muted-foreground">@address.Email</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <icon name="user" class="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                        <p class="text-muted-foreground">@address.Phone</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <icon name="truck" class="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                        <p>
+                            <span class="font-medium">@Model.ShippingOption.Name</span>
+                            <span class="text-muted-foreground"> — @Model.ShippingOption.Description</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Items (@Model.Cart.ItemCount)</h2>
+                </div>
+                <ul class="card-content space-y-3">
+                    @foreach (var line in Model.Cart.Lines)
+                    {
+                        <li class="flex items-center gap-3">
+                            <img src="@line.ImageUrl" alt="@line.ProductName" class="size-12 shrink-0 rounded-md border object-cover" loading="lazy" />
+                            <div class="min-w-0 flex-1">
+                                <a asp-page="/Product/Details" asp-route-slug="@line.ProductSlug" class="line-clamp-1 text-sm font-medium hover:underline">@line.ProductName</a>
+                                <p class="text-xs text-muted-foreground">@line.VariantName · Qty @line.Quantity</p>
+                            </div>
+                            <span class="shrink-0 text-sm font-medium tabular-nums">@line.LineTotal.Money()</span>
+                        </li>
+                    }
+                </ul>
+                <div class="space-y-2 px-6 text-sm">
+                    <div class="separator"></div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-muted-foreground">Subtotal</span>
+                        <span class="font-medium tabular-nums">@Model.Totals.Subtotal.Money()</span>
+                    </div>
+                    @if (Model.Totals.Discount > 0)
+                    {
+                        <div class="flex items-center justify-between text-success">
+                            <span class="inline-flex items-center gap-1">
+                                <icon name="tag" class="size-3.5" /> Discount
+                            </span>
+                            <span class="font-medium tabular-nums">−@Model.Totals.Discount.Money()</span>
+                        </div>
+                    }
+                    <div class="flex items-center justify-between">
+                        <span class="text-muted-foreground">Shipping</span>
+                        <span class="font-medium tabular-nums @(Model.Totals.ShippingFee == 0 ? "text-success" : null)">
+                            @(Model.Totals.ShippingFee == 0 ? "Free" : Model.Totals.ShippingFee.Money())
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-between border-t pt-3 text-base font-bold">
+                        <span>Total</span>
+                        <span class="tabular-nums">@Model.Totals.Total.Money()</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment details -->
+        <div class="card lg:sticky lg:top-24">
+            <div class="card-header">
+                <h2 class="card-title flex items-center gap-2"><icon name="credit-card" class="size-4" /> Payment details</h2>
+                <p class="card-description">This is a mock gateway — nothing is ever charged.</p>
+            </div>
+            <form method="post" novalidate class="card-content space-y-4">
+                @if (!ViewData.ModelState.IsValid && ViewData.ModelState.TryGetValue(string.Empty, out var modelEntry) && modelEntry.Errors.Count > 0)
+                {
+                    <div class="alert alert-destructive" role="alert">
+                        <icon name="alert-circle" />
+                        <div>
+                            <p class="alert-title">@modelEntry.Errors[0].ErrorMessage</p>
+                        </div>
+                    </div>
+                }
+
+                <div class="form-field">
+                    <label class="label" for="CardHolder">Cardholder name</label>
+                    <input asp-for="CardHolder" class="input" autocomplete="cc-name" placeholder="Ada Lovelace" required />
+                    <span asp-validation-for="CardHolder" class="text-xs text-destructive"></span>
+                </div>
+                <div class="form-field">
+                    <label class="label" for="CardNumber">Card number</label>
+                    <input asp-for="CardNumber" class="input font-mono tracking-wide" inputmode="numeric"
+                           autocomplete="cc-number" placeholder="4242 4242 4242 4242" required />
+                    <span asp-validation-for="CardNumber" class="text-xs text-destructive"></span>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="form-field">
+                        <label class="label" for="Expiry">Expiry</label>
+                        <input asp-for="Expiry" class="input font-mono" inputmode="numeric" autocomplete="cc-exp"
+                               placeholder="MM/YY" maxlength="5" required />
+                        <span asp-validation-for="Expiry" class="text-xs text-destructive"></span>
+                    </div>
+                    <div class="form-field">
+                        <label class="label" for="Cvc">CVC</label>
+                        <input asp-for="Cvc" class="input font-mono" inputmode="numeric" autocomplete="cc-csc"
+                               placeholder="123" maxlength="4" required />
+                        <span asp-validation-for="Cvc" class="text-xs text-destructive"></span>
+                    </div>
+                </div>
+
+                <div class="alert alert-default border-dashed">
+                    <icon name="sparkles" />
+                    <div class="alert-description">
+                        <p><span class="font-medium">Mock test cards</span></p>
+                        <p><span class="font-mono">4242 4242 4242 4242</span> — succeeds</p>
+                        <p class="text-muted-foreground">ends <span class="font-mono">0002</span> declined · ends <span class="font-mono">9995</span> insufficient funds · ends <span class="font-mono">0069</span> expired</p>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg w-full">
+                    <icon name="lock" class="size-4" /> Pay @Model.Totals.Total.Money()
+                </button>
+                <p class="text-center text-xs text-muted-foreground">Payments are simulated — no real money moves.</p>
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,85 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Orders";
+}
+<div class="mb-6">
+    <h1 class="flex items-center gap-2 text-2xl font-bold tracking-tight">
+        Orders
+        <span class="badge badge-secondary">@Model.TotalCount</span>
+    </h1>
+    <p class="text-sm text-muted-foreground">Every checkout, newest first.</p>
+</div>
+
+<!-- Status filter chips -->
+<div class="mb-4 flex flex-wrap gap-2">
+    <a asp-page="./Index" class="btn btn-sm @(Model.Status is null ? "btn-primary" : "btn-outline")">
+        All <span class="opacity-70">@Model.TotalCount</span>
+    </a>
+    @foreach (OrderStatus status in Enum.GetValues<OrderStatus>())
+    {
+        var active = Model.Status == status;
+        <a asp-page="./Index" asp-route-status="@status" class="btn btn-sm @(active ? "btn-primary" : "btn-outline")">
+            @status <span class="opacity-70">@Model.CountFor(status)</span>
+        </a>
+    }
+</div>
+
+<section class="card">
+    <div class="card-content overflow-x-auto">
+        @if (Model.Orders.Count == 0)
+        {
+            <div class="flex flex-col items-center gap-2 py-16 text-center text-muted-foreground">
+                <icon name="package" class="size-8" />
+                <p class="text-sm">
+                    @(Model.Status is null ? "No orders yet — place one from the storefront." : $"No {Model.Status.ToString().ToLowerInvariant()} orders.")
+                </p>
+                @if (Model.Status is not null)
+                {
+                    <a asp-page="./Index" class="btn btn-outline btn-sm mt-1">Show all orders</a>
+                }
+            </div>
+        }
+        else
+        {
+            <table class="table-shad">
+                <thead>
+                    <tr>
+                        <th>Order</th>
+                        <th>Placed</th>
+                        <th>Customer</th>
+                        <th class="text-right">Items</th>
+                        <th class="text-right">Total</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var order in Model.Orders)
+                    {
+                        <tr>
+                            <td>
+                                <a asp-page="./Details" asp-route-id="@order.Id" class="font-mono text-sm font-medium hover:underline">
+                                    @order.OrderNumber
+                                </a>
+                            </td>
+                            <td class="whitespace-nowrap text-muted-foreground">@order.PlacedAt.Friendly()</td>
+                            <td>
+                                @if (string.IsNullOrEmpty(order.Email))
+                                {
+                                    <span class="text-muted-foreground">Guest</span>
+                                }
+                                else
+                                {
+                                    <span class="max-w-56 truncate" title="@order.Email">@order.Email</span>
+                                }
+                            </td>
+                            <td class="text-right text-muted-foreground">@order.Lines.Sum(l => l.Quantity)</td>
+                            <td class="whitespace-nowrap text-right font-semibold">@order.Total.Money()</td>
+                            <td><partial name="_StatusBadge" model="order.Status" /></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</section>

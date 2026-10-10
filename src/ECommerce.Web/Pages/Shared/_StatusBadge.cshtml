@@ -1,0 +1,13 @@
+@model ECommerce.Core.Entities.OrderStatus
+@{
+    var (css, label) = Model switch
+    {
+        OrderStatus.Placed => ("badge-secondary", "Placed"),
+        OrderStatus.Paid => ("badge-default", "Paid"),
+        OrderStatus.Shipped => ("badge-warning", "Shipped"),
+        OrderStatus.Delivered => ("badge-success", "Delivered"),
+        OrderStatus.Cancelled => ("badge-destructive", "Cancelled"),
+        _ => ("badge-outline", Model.ToString())
+    };
+}
+<span class="badge @css">@label</span>

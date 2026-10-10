@@ -1,0 +1,7 @@
+@model IReadOnlyList<ECommerce.Core.Entities.Category>
+@foreach (var category in Model)
+{
+    <a asp-page="/Catalog/Index" asp-route-category="@category.Slug" class="menu-item">
+        <span aria-hidden="true">@category.Icon</span> @category.Name
+    </a>
+}

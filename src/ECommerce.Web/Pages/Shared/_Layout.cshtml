@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@(ViewData["Title"] != null ? ViewData["Title"] + " · " : "")Nimbus — Tech, beautifully delivered</title>
+    <meta name="description" content="Nimbus is a full-featured demo storefront built with ASP.NET Core Razor Pages and Tailwind CSS." />
+    <link rel="icon" type="image/svg+xml" href="~/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/app.css" asp-append-version="true" />
+    <script>
+        // Apply theme before first paint to avoid a flash.
+        (function () {
+            var t = localStorage.getItem('theme');
+            if (t === 'dark' || (!t && matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
+</head>
+<body class="min-h-screen flex flex-col">
+    <header class="sticky top-0 z-40 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div class="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
+            <!-- Mobile menu -->
+            <button type="button" class="btn btn-ghost btn-icon md:hidden" data-toggle="#mobile-nav" aria-label="Open menu">
+                <icon name="menu" />
+            </button>
+
+            <a asp-page="/Index" class="flex items-center gap-2 font-extrabold tracking-tight text-lg">
+                <span class="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                    <icon name="shopping-bag" class="size-4" />
+                </span>
+                <span class="hidden sm:inline">Nimbus</span>
+            </a>
+
+            <nav class="hidden md:flex items-center gap-6 ml-4">
+                <a asp-page="/Index" class="nav-link">Home</a>
+                <a asp-page="/Catalog/Index" class="nav-link">Shop</a>
+                <div class="relative">
+                    <button type="button" class="nav-link inline-flex items-center gap-1" data-menu-toggle="#nav-categories">
+                        Categories <icon name="chevron-down" class="size-3.5" />
+                    </button>
+                    <div id="nav-categories" class="menu absolute left-0 top-full mt-2 hidden w-52">
+                        @await Component.InvokeAsync("CategoriesNav")
+                    </div>
+                </div>
+            </nav>
+
+            <div class="ml-auto flex items-center gap-1">
+                <form asp-page="/Catalog/Index" method="get" class="hidden lg:block">
+                    <div class="relative">
+                        <icon name="search" class="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                        <input type="search" name="q" placeholder="Search products…" class="input w-64 pl-8" value="@Context.Request.Query["q"]" />
+                    </div>
+                </form>
+
+                <button type="button" class="btn btn-ghost btn-icon" data-theme-toggle aria-label="Toggle theme" title="Toggle theme">
+                    <icon name="sun" class="size-4 dark:hidden" />
+                    <icon name="moon" class="hidden size-4 dark:block" />
+                </button>
+
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <a asp-page="/Account/Wishlist" class="btn btn-ghost btn-icon relative" aria-label="Wishlist" title="Wishlist">
+                        <icon name="heart" class="size-4" />
+                        @await Component.InvokeAsync("WishlistBadge")
+                    </a>
+                    <div class="relative">
+                        <button type="button" class="btn btn-ghost btn-icon" data-menu-toggle="#nav-account" aria-label="Account">
+                            <icon name="user" class="size-4" />
+                        </button>
+                        <div id="nav-account" class="menu absolute right-0 top-full mt-2 hidden w-56">
+                            <div class="px-2 py-1.5">
+                                <p class="text-sm font-medium truncate">@User.Identity?.Name</p>
+                                <p class="text-xs text-muted-foreground truncate">@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</p>
+                            </div>
+                            <div class="separator my-1"></div>
+                            <a asp-page="/Account/Orders" class="menu-item"><icon name="package" class="size-4" /> My orders</a>
+                            <a asp-page="/Account/Wishlist" class="menu-item"><icon name="heart" class="size-4" /> Wishlist</a>
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <div class="separator my-1"></div>
+                                <a asp-area="Admin" asp-page="/Index" class="menu-item"><icon name="layout-dashboard" class="size-4" /> Admin dashboard</a>
+                            }
+                            <div class="separator my-1"></div>
+                            <form asp-page="/Account/Logout" method="post">
+                                <button type="submit" class="menu-item"><icon name="log-out" class="size-4" /> Sign out</button>
+                            </form>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <a asp-page="/Account/Login" class="btn btn-ghost btn-icon hidden sm:inline-flex" aria-label="Sign in" title="Sign in">
+                        <icon name="user" class="size-4" />
+                    </a>
+                    <a asp-page="/Account/Login" class="btn btn-outline btn-sm hidden sm:inline-flex ml-1">Sign in</a>
+                }
+
+                <a asp-page="/Cart/Index" class="btn btn-ghost btn-icon relative" aria-label="Cart" title="Cart">
+                    <icon name="shopping-cart" class="size-4" />
+                    @await Component.InvokeAsync("CartBadge")
+                </a>
+            </div>
+        </div>
+
+        <!-- Mobile nav -->
+        <div id="mobile-nav" class="hidden border-t md:hidden">
+            <div class="mx-auto grid max-w-7xl gap-1 px-4 py-3">
+                <form asp-page="/Catalog/Index" method="get" class="relative mb-2">
+                    <icon name="search" class="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                    <input type="search" name="q" placeholder="Search products…" class="input pl-8" value="@Context.Request.Query["q"]" />
+                </form>
+                <a asp-page="/Index" class="menu-item">Home</a>
+                <a asp-page="/Catalog/Index" class="menu-item">Shop</a>
+                @await Component.InvokeAsync("CategoriesNav")
+                @if (User.Identity?.IsAuthenticated != true)
+                {
+                    <div class="separator my-1"></div>
+                    <a asp-page="/Account/Login" class="menu-item"><icon name="log-in" class="size-4" /> Sign in</a>
+                }
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1">
+        @RenderBody()
+    </main>
+
+    <footer class="border-t bg-muted/30">
+        <div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+            <div class="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+                <div class="space-y-3">
+                    <div class="flex items-center gap-2 font-extrabold tracking-tight">
+                        <span class="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                            <icon name="shopping-bag" class="size-3.5" />
+                        </span>
+                        Nimbus
+                    </div>
+                    <p class="text-sm text-muted-foreground">A full-featured demo storefront built with ASP.NET Core Razor Pages, Tailwind CSS and the shadcn/ui design language.</p>
+                </div>
+                <div>
+                    <h3 class="mb-3 text-sm font-semibold">Shop</h3>
+                    <ul class="space-y-2 text-sm text-muted-foreground">
+                        <li><a asp-page="/Catalog/Index" class="hover:text-foreground">All products</a></li>
+                        <li><a asp-page="/Catalog/Index" asp-route-sort="newest" class="hover:text-foreground">New arrivals</a></li>
+                        <li><a asp-page="/Catalog/Index" asp-route-featured="true" class="hover:text-foreground">Featured</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="mb-3 text-sm font-semibold">Account</h3>
+                    <ul class="space-y-2 text-sm text-muted-foreground">
+                        <li><a asp-page="/Account/Login" class="hover:text-foreground">Sign in</a></li>
+                        <li><a asp-page="/Account/Register" class="hover:text-foreground">Create account</a></li>
+                        <li><a asp-page="/Account/Orders" class="hover:text-foreground">Order history</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="mb-3 text-sm font-semibold">Demo info</h3>
+                    <ul class="space-y-2 text-sm text-muted-foreground">
+                        <li class="flex items-center gap-1.5"><icon name="credit-card" class="size-3.5" /> Mock payments — use 4242 4242 4242 4242</li>
+                        <li class="flex items-center gap-1.5"><icon name="tag" class="size-3.5" /> Try coupon <span class="font-mono text-foreground">WELCOME10</span></li>
+                        <li class="flex items-center gap-1.5"><icon name="database" class="size-3.5" /> Data lives in database.json</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-10 flex flex-col items-center justify-between gap-3 border-t pt-6 text-xs text-muted-foreground sm:flex-row">
+                <p>© @DateTime.Now.Year Nimbus Demo Store. Built for learning — not a real business.</p>
+                <p>ASP.NET Core 10 · Razor Pages · Tailwind CSS v4 · shadcn/ui design language</p>
+            </div>
+        </div>
+    </footer>
+
+    @if (TempData["Toast.Message"] is string toast)
+    {
+        <div class="toast" data-toast>
+            <icon name="@TempData["Toast.Icon"]" class="size-4 @(TempData["Toast.Type"] is "error" ? "text-destructive" : "text-success")" />
+            <div class="text-sm">@toast</div>
+            <button type="button" class="ml-auto text-muted-foreground hover:text-foreground" data-toast-close aria-label="Dismiss">
+                <icon name="x" class="size-4" />
+            </button>
+        </div>
+    }
+
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

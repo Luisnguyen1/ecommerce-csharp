@@ -1,0 +1,14 @@
+@model (double Rating, int Count, string IconClass)
+@{
+    var (rating, count, iconClass) = Model;
+    var rounded = (int)Math.Round(rating);
+}
+<div class="flex items-center gap-1">
+    <div class="flex items-center gap-0.5 text-amber-500">
+        @for (var i = 1; i <= 5; i++)
+        {
+            <icon name="star" class="@iconClass @(i <= rounded ? "fill-amber-500" : "text-muted-foreground/40")" fill="@(i <= rounded)" />
+        }
+    </div>
+    <span class="text-xs text-muted-foreground">@(rating.ToString("0.0")) (@count)</span>
+</div>

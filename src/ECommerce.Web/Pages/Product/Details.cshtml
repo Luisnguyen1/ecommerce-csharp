@@ -1,0 +1,367 @@
+@page "{slug}"
+@model ECommerce.Web.Pages.Product.DetailsModel
+@{
+    var product = Model.Product;
+    var images = product.Images.Count > 0 ? product.Images : new List<string> { "/images/catalog/placeholder.svg" };
+    var variants = product.Variants.Where(v => v.IsActive).ToList();
+    var showVariants = variants.Count > 1;
+    var defaultVariant = variants.FirstOrDefault(v => v.Stock > 0) ?? variants.FirstOrDefault();
+    var stock = product.TotalStock();
+    var fromPrice = product.FromPrice();
+    var returnUrl = HttpContext.Request.Path.ToString();
+
+    string StockLine() => stock > 5 ? "In stock" : stock > 0 ? $"Only {stock} left" : "Out of stock";
+
+    string Initials(string name)
+    {
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return string.Concat(parts.Select(p => char.ToUpper(p[0])).Take(2));
+    }
+}
+
+<div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div class="space-y-12">
+
+        <!-- Breadcrumbs -->
+        <nav aria-label="Breadcrumb" class="text-sm text-muted-foreground">
+            <ol class="flex flex-wrap items-center gap-1.5">
+                <li><a asp-page="/Index" class="transition-colors hover:text-foreground">Home</a></li>
+                <li class="flex items-center gap-1.5">
+                    <icon name="chevron-right" class="size-3.5" />
+                    @if (Model.Category is { } category)
+                    {
+                        <a asp-page="/Catalog/Index" asp-route-category="@category.Slug" class="transition-colors hover:text-foreground">@category.Name</a>
+                    }
+                    else
+                    {
+                        <a asp-page="/Catalog/Index" class="transition-colors hover:text-foreground">Shop</a>
+                    }
+                </li>
+                <li class="flex min-w-0 items-center gap-1.5">
+                    <icon name="chevron-right" class="size-3.5" />
+                    <span class="truncate font-medium text-foreground">@product.Name</span>
+                </li>
+            </ol>
+        </nav>
+
+        <!-- Gallery + details -->
+        <div class="grid gap-10 lg:grid-cols-2">
+
+            <!-- Gallery -->
+            <div class="space-y-4">
+                <div class="overflow-hidden rounded-xl border bg-muted shadow-sm">
+                    <img id="main-image" src="@images[0]" alt="@product.Name" class="aspect-square w-full object-cover" />
+                </div>
+                @if (images.Count > 1)
+                {
+                    <div class="flex gap-2 overflow-x-auto pb-1">
+                        @for (var i = 0; i < images.Count; i++)
+                        {
+                            <button type="button" data-image="@images[i]"
+                                    class="gallery-thumb size-20 shrink-0 cursor-pointer overflow-hidden rounded-lg border bg-muted p-0 transition-colors @(i == 0 ? "border-primary" : "border-input hover:border-primary/50")"
+                                    aria-label="Show image @(i + 1) of @images.Count">
+                                <img src="@images[i]" alt="@product.Name — image @(i + 1)" loading="lazy" class="size-full object-cover" />
+                            </button>
+                        }
+                    </div>
+                }
+            </div>
+
+            <!-- Details -->
+            <div class="space-y-5">
+                <div class="flex flex-wrap items-center gap-2">
+                    @if (!string.IsNullOrEmpty(product.Badge))
+                    {
+                        <span class="badge badge-default">@product.Badge</span>
+                    }
+                    @if (Model.Category is { } badgeCategory)
+                    {
+                        <span class="badge badge-outline"><span aria-hidden="true">@badgeCategory.Icon</span> @badgeCategory.Name</span>
+                    }
+                </div>
+
+                <div class="space-y-2">
+                    <h1 class="text-3xl font-bold tracking-tight">@product.Name</h1>
+                    <p class="text-sm uppercase tracking-wide text-muted-foreground">@product.Brand</p>
+                    @if (Model.Rating.Count > 0)
+                    {
+                        <partial name="_RatingStars" model='(Model.Rating.Average, Model.Rating.Count, "size-4")' />
+                    }
+                    else
+                    {
+                        <p class="text-xs text-muted-foreground">No reviews yet</p>
+                    }
+                </div>
+
+                <div class="flex flex-wrap items-baseline gap-3">
+                    <span class="text-3xl font-bold">@fromPrice.Money()</span>
+                    @if (product.CompareAtPrice is { } compare && compare > fromPrice)
+                    {
+                        <span class="text-lg text-muted-foreground line-through">@compare.Money()</span>
+                        <span class="badge badge-success">Save @((compare - fromPrice).Money())</span>
+                    }
+                </div>
+
+                <p class="flex items-center gap-1.5 text-sm font-medium @(stock > 5 ? "text-success" : stock > 0 ? "text-warning" : "text-destructive")">
+                    <icon name="@(stock > 0 ? "check-circle" : "alert-circle")" class="size-4" />
+                    @StockLine()
+                </p>
+
+                <div class="space-y-3 pt-1">
+                    <form method="post" asp-page="/Cart/Index" asp-page-handler="Add" class="space-y-4">
+                        <input type="hidden" name="productId" value="@product.Id" />
+                        <input type="hidden" name="variantId" value="@(defaultVariant?.Id ?? "")" />
+                        <input type="hidden" name="returnUrl" value="@returnUrl" />
+
+                        @if (showVariants)
+                        {
+                            <div class="space-y-2">
+                                <p class="text-sm font-medium">Choose an option</p>
+                                <div data-variant-group class="flex flex-wrap gap-2">
+                                    @foreach (var variant in variants)
+                                    {
+                                        var isSelected = defaultVariant?.Id == variant.Id;
+                                        var inStock = variant.Stock > 0;
+                                        <button type="button" data-variant="@variant.Id" disabled="@(!inStock)" aria-pressed="@(isSelected ? "true" : "false")"
+                                                class="rounded-lg border px-4 py-2 text-left text-sm transition-all @(isSelected ? "border-primary ring-2 ring-ring/30" : "border-input hover:border-primary/50") @(inStock ? "cursor-pointer" : "cursor-not-allowed opacity-50")">
+                                            <span class="font-medium">@variant.Name</span>
+                                            <span class="ml-2 text-muted-foreground">@variant.EffectivePrice(product.Price).Money()</span>
+                                            <span class="block text-xs @(inStock ? "text-muted-foreground" : "text-destructive")">
+                                                @(inStock ? (variant.Stock <= 5 ? $"Only {variant.Stock} left" : "In stock") : "Out of stock")
+                                            </span>
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center">
+                                <button type="button" data-stepper="#qty" data-step="-1" class="btn btn-outline btn-icon rounded-r-none" aria-label="Decrease quantity">
+                                    <icon name="minus" class="size-4" />
+                                </button>
+                                <input id="qty" type="number" name="quantity" value="1" min="1" max="@Math.Max(stock, 1)"
+                                       class="input w-16 rounded-none border-x text-center" aria-label="Quantity" @(stock <= 0 ? "disabled" : null) />
+                                <button type="button" data-stepper="#qty" data-step="1" class="btn btn-outline btn-icon rounded-l-none" aria-label="Increase quantity">
+                                    <icon name="plus" class="size-4" />
+                                </button>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-lg flex-1" disabled="@(stock <= 0)">
+                                <icon name="shopping-cart" class="size-4" /> @(stock > 0 ? "Add to cart" : "Out of stock")
+                            </button>
+                        </div>
+                    </form>
+
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <form asp-page="/Account/Wishlist" asp-page-handler="Toggle" method="post">
+                            <input type="hidden" name="productId" value="@product.Id" />
+                            <input type="hidden" name="returnUrl" value="@returnUrl" />
+                            <button type="submit" class="btn btn-outline w-full">
+                                <icon name="heart" class="size-4 @(Model.InWishlist ? "fill-destructive text-destructive" : "")" fill="@Model.InWishlist" />
+                                @(Model.InWishlist ? "Remove from wishlist" : "Save to wishlist")
+                            </button>
+                        </form>
+                    }
+                </div>
+
+                <ul class="space-y-2 border-t pt-5 text-sm text-muted-foreground">
+                    <li class="flex items-center gap-2"><icon name="truck" class="size-4" /> Free shipping on orders over $75</li>
+                    <li class="flex items-center gap-2"><icon name="refresh" class="size-4" /> 30-day hassle-free returns</li>
+                    <li class="flex items-center gap-2"><icon name="shield-check" class="size-4" /> Covered by a 2-year warranty</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Description + specs -->
+        <div class="grid gap-6 lg:grid-cols-2">
+            <section class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Description</h2>
+                </div>
+                <div class="card-content">
+                    <p class="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+                        @(string.IsNullOrWhiteSpace(product.Description)
+                            ? "No description has been added for this product yet."
+                            : product.Description)
+                    </p>
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Specifications</h2>
+                </div>
+                <div class="card-content">
+                    <table class="table-shad">
+                        <tbody>
+                            <tr>
+                                <th>Brand</th>
+                                <td class="font-medium">@product.Brand</td>
+                            </tr>
+                            <tr>
+                                <th>SKU</th>
+                                <td class="font-mono text-xs">@product.Sku</td>
+                            </tr>
+                            <tr>
+                                <th>Category</th>
+                                <td>@(Model.Category?.Name ?? "—")</td>
+                            </tr>
+                            <tr>
+                                <th>Variants</th>
+                                <td>@variants.Count option@(variants.Count == 1 ? "" : "s")</td>
+                            </tr>
+                            <tr>
+                                <th>Total stock</th>
+                                <td>@stock</td>
+                            </tr>
+                            <tr>
+                                <th>Added</th>
+                                <td>@product.CreatedAt.Friendly()</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- Reviews -->
+        <section class="space-y-6">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <h2 class="text-2xl font-bold tracking-tight">Reviews (@Model.Rating.Count)</h2>
+                <div class="flex items-center gap-3">
+                    <span class="text-3xl font-bold">@Model.Rating.Average.ToString("0.0")</span>
+                    <partial name="_RatingStars" model='(Model.Rating.Average, Model.Rating.Count, "size-4")' />
+                </div>
+            </div>
+
+            @if (Model.Reviews.Count > 0)
+            {
+                <div class="space-y-4">
+                    @foreach (var review in Model.Reviews)
+                    {
+                        <article class="flex gap-4 rounded-xl border bg-card p-6 shadow-sm">
+                            <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary" aria-hidden="true">
+                                @(Initials(string.IsNullOrWhiteSpace(review.UserName) ? "?" : review.UserName))
+                            </span>
+                            <div class="min-w-0 space-y-1.5">
+                                <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+                                    <p class="font-medium leading-none">@review.UserName</p>
+                                    <span class="flex items-center gap-0.5 text-amber-500" aria-label="Rated @review.Rating out of 5">
+                                        @for (var s = 1; s <= 5; s++)
+                                        {
+                                            <icon name="star" class="size-3.5 @(s <= review.Rating ? "fill-amber-500" : "text-muted-foreground/40")" fill="@(s <= review.Rating)" />
+                                        }
+                                    </span>
+                                    <span class="text-xs text-muted-foreground">@review.CreatedAt.Friendly()</span>
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(review.Title))
+                                {
+                                    <p class="font-medium">@review.Title</p>
+                                }
+                                <p class="text-sm leading-relaxed text-muted-foreground">@review.Body</p>
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="card items-center rounded-xl py-12 text-center">
+                    <icon name="star" class="size-8 text-muted-foreground" />
+                    <div class="space-y-1">
+                        <h3 class="font-semibold">No reviews yet</h3>
+                        <p class="text-sm text-muted-foreground">Be the first to share what you think of this product.</p>
+                    </div>
+                </div>
+            }
+
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <form method="post" asp-page-handler="AddReview" asp-route-slug="@product.Slug" class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Write a review</h3>
+                        <p class="card-description">One review per product — submitting again updates it.</p>
+                    </div>
+                    <div class="card-content space-y-4">
+                        <div class="form-field">
+                            <span class="label">Rating</span>
+                            <div class="flex flex-row-reverse justify-end gap-1">
+                                @for (var i = 5; i >= 1; i--)
+                                {
+                                    <input type="radio" name="rating" value="@i" id="rating-@i" class="peer sr-only" checked="@(i == 5)" />
+                                    <label for="rating-@i"
+                                           class="flex size-9 cursor-pointer items-center justify-center rounded-md transition-colors hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50 peer-focus-visible:ring-[3px] peer-focus-visible:ring-ring/50 [&_svg]:size-5 [&_svg]:text-muted-foreground/40 peer-checked:[&_svg]:fill-amber-500 peer-checked:[&_svg]:text-amber-500">
+                                        <span class="sr-only">@i star@(i == 1 ? "" : "s")</span>
+                                        <icon name="star" />
+                                    </label>
+                                }
+                            </div>
+                        </div>
+                        <div class="form-field">
+                            <label class="label" for="review-title">Title</label>
+                            <input id="review-title" name="title" class="input" maxlength="100" placeholder="Sum it up in a few words" required />
+                        </div>
+                        <div class="form-field">
+                            <label class="label" for="review-body">Review</label>
+                            <textarea id="review-body" name="body" class="textarea" rows="4" maxlength="2000" placeholder="What did you like or dislike? How did you use it?" required></textarea>
+                        </div>
+                    </div>
+                    <div class="card-footer justify-end">
+                        <button type="submit" class="btn btn-primary">
+                            <icon name="star" class="size-4" /> Submit review
+                        </button>
+                    </div>
+                </form>
+            }
+            else
+            {
+                <div class="alert alert-default">
+                    <icon name="log-in" />
+                    <div>
+                        <p class="alert-title">Sign in to write a review</p>
+                        <div class="alert-description">
+                            <p>Reviews help other shoppers pick the right gear.</p>
+                            <a asp-page="/Account/Login" asp-route-ReturnUrl="@returnUrl" class="font-medium underline underline-offset-4">Sign in or create an account</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </section>
+
+        <!-- Related -->
+        @if (Model.Related.Count > 0)
+        {
+            <section class="space-y-6">
+                <h2 class="text-2xl font-bold tracking-tight">You may also like</h2>
+                <div class="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
+                    @foreach (var related in Model.Related)
+                    {
+                        <partial name="_ProductCard" model="related" />
+                    }
+                </div>
+            </section>
+        }
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Gallery: clicking a thumbnail swaps the main image.
+        document.querySelectorAll('.gallery-thumb').forEach(function (thumb) {
+            thumb.addEventListener('click', function () {
+                var main = document.getElementById('main-image');
+                if (!main) return;
+                var src = thumb.getAttribute('data-image');
+                if (src) main.src = src;
+                document.querySelectorAll('.gallery-thumb').forEach(function (t) {
+                    t.classList.remove('border-primary');
+                    t.classList.add('border-input');
+                });
+                thumb.classList.remove('border-input');
+                thumb.classList.add('border-primary');
+            });
+        });
+    </script>
+}
